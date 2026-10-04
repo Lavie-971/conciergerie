@@ -1,0 +1,3143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Planning Conciergerie</title>
+<link rel="manifest" id="pwaManifest">
+<link rel="apple-touch-icon" id="pwaIcon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap"></noscript>
+<script src="https://cdn.jsdelivr.net/npm/libphonenumber-js@1/bundle/libphonenumber-js.min.js" async defer></script>
+<style>
+/* ─── Variables ─────────────────────────────────────────────────── */
+:root{
+  --bg:#EEF2EF;
+  --surface:#FFFFFF;
+  --accent:#2F6F62;
+  --accent-dark:#1F4F45;
+  --accent-soft:rgba(47,111,98,0.08);
+  --ink:#1A2E2B;
+  --ink-soft:#4A6B62;
+  --ink-faint:#8AA89F;
+  --line:#D4E2DE;
+  --line-soft:#E8EFED;
+  --weekend:rgba(0,0,0,0.025);
+  --radius:12px;
+  --modal-pad-y:22px;
+  --modal-pad-x:24px;
+  --modal-pad-bottom:24px;
+  /* Statuts */
+  --st-indisponible:#9E9E9E;
+  --st-option:#FF9800;
+  --st-nemeconcerne:#607D8B;
+  --st-arrhes:#2196F3;
+  --st-annulation:#F44336;
+  --st-paye:#4CAF50;
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1F1C;--surface:#1A2E2B;--accent:#4CAF9C;--accent-dark:#6ECFC0;
+    --accent-soft:rgba(76,175,156,0.12);--ink:#E8F0EE;--ink-soft:#9ABFB8;
+    --ink-faint:#4A6B62;--line:#2A3F3B;--line-soft:#1F3330;--weekend:rgba(255,255,255,0.03);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1F1C;--surface:#1A2E2B;--accent:#4CAF9C;--accent-dark:#6ECFC0;
+  --accent-soft:rgba(76,175,156,0.12);--ink:#E8F0EE;--ink-soft:#9ABFB8;
+  --ink-faint:#4A6B62;--line:#2A3F3B;--line-soft:#1F3330;--weekend:rgba(255,255,255,0.03);
+}
+
+/* ─── Reset & base ───────────────────────────────────────────────── */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+button{font-family:inherit;cursor:pointer;font-size:inherit;}
+input,select,textarea{font-family:inherit;background:var(--surface);color:var(--ink);transition:border-color 0.15s;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)!important;}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+
+/* ─── Topbar ─────────────────────────────────────────────────────── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px 10px calc(16px + env(safe-area-inset-left,0px));
+  background:var(--surface);border-bottom:1px solid var(--line);
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:30;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+.brand h1{font-family:'Fraunces',serif;font-style:italic;font-size:18px;margin:0;color:var(--accent-dark);}
+.brand small{font-size:11px;color:var(--ink-faint);}
+.menu-btn{background:none;border:none;font-size:22px;color:var(--ink-soft);padding:4px 8px;border-radius:8px;}
+.menu-btn:hover{background:var(--accent-soft);}
+.top-actions{display:flex;gap:6px;align-items:center;}
+.today-btn-top,.add-btn-top{
+  background:none;border:1.5px solid var(--line);border-radius:8px;
+  padding:5px 12px;font-size:13px;color:var(--ink-soft);font-weight:600;
+}
+.today-btn-top:hover,.add-btn-top:hover{border-color:var(--accent);color:var(--accent-dark);}
+.add-btn-top{background:var(--accent);color:#fff;border-color:var(--accent);}
+.add-btn-top:hover{background:var(--accent-dark);}
+
+/* ─── Nav calendrier ─────────────────────────────────────────────── */
+.cal-nav{
+  display:flex;align-items:center;gap:8px;padding:10px 16px;
+  background:var(--surface);border-bottom:1px solid var(--line);
+}
+.cal-nav button{background:none;border:1.5px solid var(--line);border-radius:8px;padding:5px 14px;font-weight:600;color:var(--ink-soft);}
+.cal-nav button:hover{border-color:var(--accent);color:var(--accent-dark);}
+#monthLabel{font-weight:700;font-size:15px;flex:1;text-align:center;color:var(--ink);}
+.view-select-wrap{position:relative;}
+#viewSelectBtn{background:none;border:1.5px solid var(--line);border-radius:8px;padding:5px 12px;font-weight:600;color:var(--ink-soft);font-size:12.5px;}
+#viewSelectBtn:hover{border-color:var(--accent);}
+#viewSelectMenu{
+  position:absolute;right:0;top:110%;background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;padding:6px;min-width:130px;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,0.12);display:none;
+}
+#viewSelectMenu.open{display:block;}
+#viewSelectMenu button{display:block;width:100%;text-align:left;padding:7px 12px;border:none;background:none;border-radius:7px;font-size:13.5px;color:var(--ink-soft);}
+#viewSelectMenu button:hover{background:var(--accent-soft);color:var(--accent-dark);}
+
+/* ─── Today/Tomorrow panels ─────────────────────────────────────── */
+.today-tomorrow-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid var(--line);}
+.today-panel{background:var(--surface);padding:10px 16px;}
+.today-panel+.today-panel{border-left:1px solid var(--line);}
+.today-panel-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-faint);margin-bottom:6px;}
+.today-panel .tp-item{font-size:12.5px;padding:4px 0;cursor:pointer;color:var(--ink-soft);}
+.today-panel .tp-item:hover{color:var(--accent-dark);}
+.today-panel .tp-item span{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+@media(max-width:480px){.today-tomorrow-wrap{grid-template-columns:1fr;}.today-panel+.today-panel{border-left:none;border-top:1px solid var(--line);}}
+
+/* ─── Calendrier ─────────────────────────────────────────────────── */
+#calendarScroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.calendar-grid{display:grid;min-width:max-content;}
+.apt-label-col{position:sticky;left:0;z-index:20;background:var(--surface);border-right:1px solid var(--line);}
+.apt-info{padding:8px 12px;border-bottom:1px solid var(--line-soft);cursor:pointer;min-width:120px;max-width:160px;}
+.apt-info:hover{background:var(--accent-soft);}
+.apt-name{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.apt-owner{font-size:11px;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.corner-cell{position:sticky;left:0;z-index:21;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);}
+.days-header-row{display:grid;}
+.apt-row{display:grid;}
+.day-head{
+  border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line);
+  padding:4px 0;text-align:center;font-size:10px;color:var(--ink-soft);
+}
+.day-head .dow{display:block;font-size:9px;letter-spacing:0.03em;text-transform:uppercase;}
+.day-head .num{display:block;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);margin-top:1px;}
+.day-head.weekend{background:var(--weekend);}
+.day-head.today{background:rgba(232,163,61,0.25);}
+.day-head.today .num{color:#fff;font-weight:800;background:#E8A33D;border-radius:50%;width:22px;height:22px;line-height:22px;display:inline-flex;align-items:center;justify-content:center;margin-top:2px;}
+.apt-days{display:grid;position:relative;}
+.day-cell{border-right:1px solid var(--line-soft);cursor:pointer;grid-row:1/-1;}
+.day-cell.weekend{background:var(--weekend);}
+.day-cell.today{background:rgba(232,163,61,0.18);border-left:3px solid #E8A33D;}
+.day-cell.today:hover{background:rgba(232,163,61,0.28);}
+.day-cell:not(.today):hover{background:var(--accent-soft);}
+.apartment-row{border-bottom:1px solid var(--line-soft);}
+.apartment-row:last-child{border-bottom:none;}
+
+/* ─── Barres de réservation ──────────────────────────────────────── */
+.booking-bar{
+  position:absolute;height:28px;border-radius:6px;display:flex;align-items:center;
+  padding:0 8px;font-size:11.5px;color:#fff;overflow:hidden;white-space:nowrap;cursor:pointer;
+  box-shadow:0 1px 3px rgba(0,0,0,0.15);border:1px solid rgba(0,0,0,0.06);
+  z-index:5;top:4px;
+}
+.booking-bar .bsource{width:9px;height:9px;border-radius:50%;border:2px solid rgba(255,255,255,0.7);flex:0 0 auto;margin-right:5px;}
+.bname{font-weight:600;overflow:hidden;text-overflow:ellipsis;}
+
+/* ─── Vue année ──────────────────────────────────────────────────── */
+.year-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:16px;}
+@media(max-width:600px){.year-grid{grid-template-columns:1fr 1fr;}}
+.year-month-cell{background:var(--surface);border-radius:10px;padding:12px 14px;cursor:pointer;border:1px solid var(--line);transition:border-color 0.15s;}
+.year-month-cell:hover{border-color:var(--accent);}
+.year-month-cell h3{font-size:13px;font-weight:700;margin:0 0 6px;color:var(--ink-soft);}
+.year-mini-bars{display:flex;flex-direction:column;gap:3px;min-height:20px;}
+.year-mini-bar{height:6px;border-radius:3px;opacity:0.85;}
+
+/* ─── Modal ──────────────────────────────────────────────────────── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(20,44,39,0.45);align-items:center;justify-content:center;z-index:50;padding:20px;}
+.modal-backdrop[hidden]{display:none!important;}
+.modal-backdrop:not([hidden]){display:flex;}
+.modal{background:var(--surface);border-radius:16px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,0.28);padding:0;}
+.modal h2{font-family:'Fraunces',serif;font-style:italic;font-size:21px;margin:0;color:var(--accent-dark);}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:22px 28px 18px 28px;border-bottom:1px solid var(--line);background:var(--surface);border-radius:16px 16px 0 0;position:sticky;top:0;z-index:2;}
+.modal-content{padding:24px 28px 8px 28px;}
+.modal-close{border:none;background:var(--accent-soft);color:var(--accent-dark);width:32px;height:32px;border-radius:50%;font-size:16px;line-height:1;flex:0 0 auto;}
+.modal-close:hover{background:var(--accent);color:#fff;}
+.modal-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 28px 24px 28px;border-top:1px solid var(--line);background:var(--surface);border-radius:0 0 16px 16px;position:sticky;bottom:0;z-index:2;}
+.modal-footer .right{display:flex;gap:10px;}
+.btn{border-radius:10px;padding:10px 20px;font-size:14px;font-weight:600;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);}
+.btn:hover{border-color:var(--accent);}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn.primary:hover{background:var(--accent-dark);}
+.btn.danger{color:var(--st-annulation);border-color:var(--st-annulation);background:#fff;}
+.btn.danger:hover{background:var(--st-annulation);color:#fff;}
+.btn.small{padding:6px 12px;font-size:12.5px;}
+
+/* ─── Champs de formulaire ───────────────────────────────────────── */
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.03em;}
+.field input,.field select,.field textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink);font-size:14.5px;transition:border-color 0.15s;}
+.field textarea{resize:vertical;min-height:64px;}
+.field-row{display:flex;gap:14px;flex-wrap:wrap;}
+.field-row .field{min-width:120px;flex:1;}
+
+/* ─── Cases à cocher ─────────────────────────────────────────────── */
+.checkbox-label{display:flex;align-items:center;gap:9px;cursor:pointer;font-weight:600;white-space:nowrap;font-size:21px;line-height:1;width:max-content;max-width:100%;color:var(--ink);}
+.checkbox-label input[type=checkbox]{margin:0;flex:0 0 auto;width:21px;height:21px;accent-color:var(--accent);align-self:center;}
+.checkbox-label span{display:inline-flex;align-items:center;line-height:1;align-self:center;}
+@media(max-width:520px){.checkbox-label{font-size:18px;gap:7px;}.checkbox-label input[type=checkbox]{width:18px;height:18px;}}
+
+/* ─── Statuts ────────────────────────────────────────────────────── */
+.status-select-wrap,.source-select-wrap{display:flex;flex-wrap:wrap;gap:6px;}
+.status-opt,.source-opt{border:1.5px solid var(--line);border-radius:8px;padding:7px 11px;font-size:12.5px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--ink-soft);}
+.status-opt.selected,.source-opt.selected{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-dark);font-weight:600;}
+.status-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;}
+
+/* ─── Mini-calendrier ────────────────────────────────────────────── */
+.date-input-wrap{position:relative;}
+.date-picker-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:16px;cursor:pointer;padding:2px;line-height:1;}
+.mini-calendar{position:absolute;z-index:100;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;box-shadow:0 8px 24px rgba(0,0,0,0.15);min-width:240px;top:110%;}
+.mini-calendar[hidden]{display:none!important;}
+.mini-cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.mini-cal-header span{font-size:13px;font-weight:700;}
+.mini-cal-header button{background:none;border:none;font-size:16px;cursor:pointer;color:var(--ink-soft);padding:2px 6px;}
+.mini-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.mini-calendar-day{text-align:center;padding:5px 2px;font-size:12px;cursor:pointer;border-radius:6px;color:var(--ink-soft);}
+.mini-calendar-day:hover{background:var(--accent-soft);color:var(--accent-dark);}
+.mini-calendar-day.today-marker{box-shadow:inset 0 0 0 1.5px var(--accent);}
+.mini-calendar-day.selected{background:var(--accent);color:#fff;}
+.mini-calendar-day.other-month{opacity:0.3;}
+.mini-cal-dow{text-align:center;font-size:10px;color:var(--ink-faint);font-weight:600;text-transform:uppercase;padding-bottom:4px;}
+
+/* ─── Tiroir ─────────────────────────────────────────────────────── */
+.drawer-backdrop{position:fixed;inset:0;z-index:60;}
+.drawer-backdrop[hidden]{display:none!important;}
+.drawer-backdrop:not([hidden]){display:flex;}
+.drawer-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.3);}
+.drawer{position:relative;width:min(340px,90vw);height:100%;background:var(--surface);box-shadow:4px 0 24px rgba(0,0,0,0.2);overflow-y:auto;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);}
+.drawer-head h2{font-family:'Fraunces',serif;font-style:italic;font-size:19px;margin:0;color:var(--accent-dark);}
+.summary{display:flex;flex-wrap:wrap;gap:10px;padding:16px;}
+.drawer .summary .card{flex:none;}
+.summary .card{flex:1 1 160px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;}
+.summary .card .label{font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.05em;}
+.summary .card .value{font-family:'IBM Plex Mono',monospace;font-size:21px;font-weight:600;color:var(--accent-dark);margin-top:2px;}
+.drawer-actions{display:flex;flex-direction:column;gap:0;padding:8px 12px;flex:1;}
+.drawer-actions button{text-align:left;background:none;border:none;padding:11px 12px;font-size:14px;font-weight:500;color:var(--ink-soft);border-radius:10px;}
+.drawer-actions button:hover{background:var(--accent-soft);color:var(--accent-dark);}
+.eye-toggle{background:none;border:none;font-size:18px;cursor:pointer;opacity:0.7;padding:2px 6px;border-radius:6px;}
+.eye-toggle.active{opacity:1;color:var(--accent-dark);}
+
+/* ─── Statistiques ───────────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+.card .label{font-size:11.5px;color:var(--ink-faint);margin-bottom:4px;}
+.card .value{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:var(--accent-dark);}
+.tab-btns{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.tab-btn{background:none;border:1.5px solid var(--line);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;color:var(--ink-soft);}
+.tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ─── Services (liste dans réservation) ──────────────────────────── */
+.service-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.service-row input[data-role=label]{flex:1;}
+.service-row input[data-role=price]{width:90px;}
+.service-row button{background:none;border:none;color:var(--st-annulation);font-size:18px;cursor:pointer;padding:0 4px;flex:0 0 auto;}
+.add-service-link{background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;padding:0;}
+.add-service-link:hover{text-decoration:underline;}
+
+/* ─── Avances ────────────────────────────────────────────────────── */
+.advance-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:13px;}
+.advance-row .adv-info{flex:1;}
+.advance-row .adv-amount{font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--accent-dark);}
+.advance-row .adv-reimb{font-size:11px;color:var(--st-paye);}
+.advance-row .adv-pending{font-size:11px;color:var(--st-annulation);}
+.advance-row button{background:none;border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:11.5px;cursor:pointer;color:var(--ink-soft);}
+.advance-row button:hover{border-color:var(--accent);color:var(--accent-dark);}
+
+/* ─── Détail réservation ─────────────────────────────────────────── */
+.detail-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;}
+.detail-row:last-child{border-bottom:none;}
+.detail-row .k{color:var(--ink-soft);font-weight:600;white-space:nowrap;}
+.detail-row .v{text-align:right;color:var(--ink);}
+.history-item{font-size:12px;color:var(--ink-faint);padding:3px 0;}
+
+/* ─── Liste bookings ─────────────────────────────────────────────── */
+#bookingsListPanel{display:none;overflow-x:auto;border-top:1px solid var(--line);}
+#bookingsTable{width:100%;border-collapse:collapse;font-size:12.5px;}
+#bookingsTable th{text-align:left;padding:8px 10px;background:var(--surface);border-bottom:2px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-faint);white-space:nowrap;position:sticky;top:0;z-index:5;}
+#bookingsTable td{padding:7px 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap;}
+#bookingsTable tr:hover td{background:var(--accent-soft);}
+.tel-link{color:var(--accent-dark);text-decoration:none;font-weight:600;}
+.tel-link:hover{text-decoration:underline;}
+
+/* ─── Logements ──────────────────────────────────────────────────── */
+.apt-list-item{display:flex;align-items:center;gap:8px;padding:10px 4px;border-bottom:1px solid var(--line-soft);}
+.apt-list-item .info{flex:1;}
+.apt-list-item .n{font-weight:700;font-size:14px;}
+.apt-list-item .o{font-size:12px;color:var(--ink-faint);}
+.apt-list-item button{background:none;border:1px solid var(--line);border-radius:7px;padding:4px 9px;font-size:13px;cursor:pointer;color:var(--ink-soft);}
+.apt-list-item button:hover{border-color:var(--accent);color:var(--accent-dark);}
+.reorder-btns{display:flex;flex-direction:column;gap:0;}
+.drag-handle{cursor:grab;color:var(--ink-faint);font-size:16px;padding:4px 2px;touch-action:none;user-select:none;flex:0 0 auto;}
+.drag-handle:hover{color:var(--accent-dark);}
+.apt-list-item.dragging{opacity:0.85;box-shadow:0 8px 16px rgba(0,0,0,0.15);border-radius:8px;background:var(--accent-soft);cursor:grabbing;}
+.apt-edit-form{background:var(--accent-soft);border-radius:10px;padding:14px;margin:8px 0;}
+
+/* ─── Badges & divers ────────────────────────────────────────────── */
+.nights-badge{display:inline-block;margin-top:4px;font-size:12.5px;color:var(--ink-faint);}
+.divider{border:none;border-top:1px solid var(--line-soft);margin:14px 0;}
+.empty-state{text-align:center;padding:40px 20px;color:var(--ink-faint);}
+.empty-state .emoji{font-size:48px;margin-bottom:12px;}
+.empty-state h2{font-family:'Fraunces',serif;font-style:italic;color:var(--ink-soft);}
+
+/* ─── Impression & factures ─────────────────────────────────────── */
+#printPanel{display:none;}
+body.printing-doc{overflow:auto;}
+body.printing-doc > *:not(#printPanel){display:none!important;}
+body.printing-doc #printPanel{display:block!important;padding:24px;max-width:760px;margin:0 auto;font-family:'Inter',sans-serif;color:#111;min-height:100vh;box-sizing:border-box;}
+.doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:10px;border-bottom:1px solid #000;}
+.doc-header h1{font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:700;margin:0;color:#000;letter-spacing:0.01em;}
+.doc-meta{text-align:right;font-size:11.5px;color:#333;line-height:1.9;}
+.doc-meta-bar{margin-bottom:20px;padding:8px 12px;border:1px solid #ccc;font-size:11.5px;color:#333;line-height:1.9;}
+.doc-meta-bar span{font-weight:600;}
+.doc-parties{display:flex;justify-content:space-between;gap:24px;margin-bottom:22px;flex-wrap:wrap;}
+.doc-party{flex:1;min-width:160px;font-size:11.5px;line-height:1.8;color:#000;}
+.doc-party h3{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#000;margin:0 0 5px;padding-bottom:3px;border-bottom:1px solid #000;}
+.doc-party strong{display:block;font-size:12px;font-weight:700;margin-bottom:1px;}
+.doc-party span{display:block;color:#444;font-size:11px;}
+.doc-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:11.5px;}
+.doc-table thead tr{border-top:1px solid #000;border-bottom:1px solid #000;}
+.doc-table th{text-align:left;padding:7px 8px;font-size:10.5px;text-transform:uppercase;letter-spacing:0.04em;font-weight:700;background:none;color:#000;}
+.doc-table td{padding:7px 8px;border-bottom:1px solid #ddd;color:#000;}
+.doc-table tbody tr:last-child td{border-bottom:1px solid #000;}
+.doc-table .right{text-align:right;font-weight:700;}
+.doc-table tfoot td{border:none;padding:8px;font-weight:700;font-size:13px;background:none;color:#000;}
+.doc-table tfoot tr:first-child td{border-top:1px solid #000;padding-top:10px;}
+.doc-footer{margin-top:20px;font-size:10.5px;color:#666;line-height:1.7;border-top:1px solid #ccc;padding-top:10px;}
+.doc-print-btn-wrap{display:flex;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #ddd;}
+@media print{
+  .doc-print-btn-wrap{display:none!important;}
+  #printPanel{display:block!important;max-width:100%;padding:0;}
+  body{background:#fff!important;}
+  .doc-table{page-break-inside:auto;}
+  .doc-table tr{page-break-inside:avoid;}
+  .doc-header,.doc-parties,.doc-party{page-break-inside:avoid;}
+  .doc-footer{page-break-inside:avoid;}
+  @page{size:A4;margin:2cm;}
+}
+
+/* ─── Confirms ───────────────────────────────────────────────────── */
+.confirm-modal{max-width:360px;padding:24px;}
+.confirm-modal h3{font-size:16px;font-weight:700;margin:0 0 8px;}
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media(max-width:520px){
+  .summary .card{flex:1 1 45%;padding:10px 12px;}
+  .field input,.field select,.field textarea{font-size:14px;}
+}
+@media(max-width:400px){
+  .summary .card{flex:1 1 100%;}
+}
+</style>
+</head>
+
+<body>
+
+<!-- ÉCRAN DE CONNEXION -->
+<div id="loginScreen" style="position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Inter',system-ui,sans-serif;padding:20px;">
+  <div style="background:#fff;border-radius:16px;padding:40px 36px;max-width:400px;width:100%;box-shadow:0 8px 32px rgba(20,44,39,0.15);">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:44px;margin-bottom:12px;">&#127968;</div>
+      <h1 style="font-family:'Fraunces',serif;font-style:italic;font-size:22px;color:#1F4F45;margin:0 0 4px;">Planning Conciergerie</h1>
+      <p id="loginSubtitle" style="font-size:13px;color:#888;margin:0;">Connexion &agrave; votre espace</p>
+    </div>
+    <div id="loginTabs" style="display:flex;gap:0;margin-bottom:20px;border-radius:10px;overflow:hidden;border:1.5px solid #dde8e2;">
+      <button id="tabLoginBtn" style="flex:1;padding:9px;font-size:13.5px;font-weight:600;border:none;background:#1F4F45;color:#fff;cursor:pointer;">Connexion</button>
+      <button id="tabRegisterBtn" style="flex:1;padding:9px;font-size:13.5px;font-weight:600;border:none;background:transparent;color:#1F4F45;cursor:pointer;">Cr&eacute;er un compte</button>
+    </div>
+    <div id="formLogin">
+      <input type="email" id="loginEmail" placeholder="Adresse email" autocomplete="email" style="width:100%;box-sizing:border-box;border:1.5px solid #dde8e2;border-radius:10px;padding:11px 14px;font-size:14.5px;outline:none;margin-bottom:10px;">
+      <input type="password" id="loginPassword" placeholder="Mot de passe" autocomplete="current-password" style="width:100%;box-sizing:border-box;border:1.5px solid #dde8e2;border-radius:10px;padding:11px 14px;font-size:14.5px;outline:none;margin-bottom:12px;">
+      <button id="doLoginBtn" style="width:100%;background:#1F4F45;color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px;">Se connecter</button>
+      <button id="forgotTabBtn" style="width:100%;background:none;border:none;color:#888;font-size:12.5px;cursor:pointer;padding:4px;">Mot de passe oubli&eacute; ?</button>
+    </div>
+    <div id="formRegister" style="display:none;">
+      <input type="email" id="registerEmail" placeholder="Adresse email" autocomplete="email" style="width:100%;box-sizing:border-box;border:1.5px solid #dde8e2;border-radius:10px;padding:11px 14px;font-size:14.5px;outline:none;margin-bottom:10px;">
+      <input type="password" id="registerPassword" placeholder="Mot de passe (8 caract&egrave;res minimum)" autocomplete="new-password" style="width:100%;box-sizing:border-box;border:1.5px solid #dde8e2;border-radius:10px;padding:11px 14px;font-size:14.5px;outline:none;margin-bottom:10px;">
+      <input type="password" id="registerPassword2" placeholder="Confirmer le mot de passe" autocomplete="new-password" style="width:100%;box-sizing:border-box;border:1.5px solid #dde8e2;border-radius:10px;padding:11px 14px;font-size:14.5px;outline:none;margin-bottom:10px;">
+      <input type="text" id="registerInviteCode" placeholder="Code d'invitation" autocomplete="off" style="width:100%;box-sizing:border-box;border:1.5px solid #dde8e2;border-radius:10px;padding:11px 14px;font-size:14.5px;outline:none;margin-bottom:12px;letter-spacing:0.05em;">
+      <button id="doRegisterBtn" style="width:100%;background:#1F4F45;color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;">Cr&eacute;er mon compte</button>
+    </div>
+    <div id="formForgot" style="display:none;">
+      <p style="font-size:13px;color:#555;margin:0 0 12px;">Saisis ton email pour recevoir un lien de r&eacute;initialisation.</p>
+      <input type="email" id="forgotEmail" placeholder="Adresse email" autocomplete="email" style="width:100%;box-sizing:border-box;border:1.5px solid #dde8e2;border-radius:10px;padding:11px 14px;font-size:14.5px;outline:none;margin-bottom:12px;">
+      <button id="doForgotBtn" style="width:100%;background:#1F4F45;color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px;">Envoyer le lien</button>
+      <button id="backToLoginBtn" style="width:100%;background:none;border:none;color:#888;font-size:12.5px;cursor:pointer;">&larr; Retour &agrave; la connexion</button>
+    </div>
+    <div id="loginMsg" style="font-size:12.5px;margin-top:12px;text-align:center;display:none;padding:8px 12px;border-radius:8px;"></div>
+    <div id="localModeDiv" style="margin-top:16px;text-align:center;display:none;">
+      <button id="localModeBtn" style="background:none;border:1px solid #dde8e2;border-radius:8px;padding:8px 16px;font-size:12px;color:#888;cursor:pointer;">Continuer sans compte (donn&eacute;es locales)</button>
+    </div>
+  </div>
+  <p style="font-size:11px;color:#aaa;margin-top:16px;">Donn&eacute;es chiffr&eacute;es &mdash; acc&egrave;s personnel uniquement</p>
+</div>
+
+<!-- APPLICATION PRINCIPALE -->
+<div id="app">
+
+  <header class="topbar">
+    <button id="menuBtn" aria-label="Ouvrir le tableau de bord" class="menu-btn">&#9776;</button>
+    <div class="brand">
+      <h1>Planning Conciergerie</h1>
+    </div>
+    <div class="top-actions">
+      <button id="todayBtn" class="today-btn-top">Auj.</button>
+      <button id="addBookingBtn" class="add-btn-top">+ R&eacute;sa</button>
+    </div>
+  </header>
+
+  <div class="cal-nav">
+    <button id="prevMonth" aria-label="Mois pr&eacute;c&eacute;dent">&lsaquo;</button>
+    <span id="monthLabel"></span>
+    <button id="nextMonth" aria-label="Mois suivant">&rsaquo;</button>
+    <div class="view-select-wrap">
+      <button id="viewSelectBtn">Mois</button>
+      <div id="viewSelectMenu">
+        <button data-view="month">&#128197; Mois</button>
+        <button data-view="week">&#128198; Semaine</button>
+        <button data-view="year">&#128467; Ann&eacute;e</button>
+      </div>
+    </div>
+    <button id="toggleListBtn" style="background:none;border:1.5px solid var(--line);border-radius:8px;padding:5px 12px;font-size:12.5px;color:var(--ink-soft);font-weight:600;">&#128203; Liste</button>
+  </div>
+
+  <div class="today-tomorrow-wrap">
+    <div class="today-panel" id="todayPanel"></div>
+    <div class="today-panel" id="tomorrowPanel"></div>
+  </div>
+
+  <div id="bookingsListPanel">
+    <table id="bookingsTable">
+      <thead>
+        <tr>
+          <th>Statut</th><th>Logement</th><th>Client</th><th>T&eacute;l.</th>
+          <th>Arriv&eacute;e</th><th>D&eacute;part</th><th>Nuits</th>
+          <th>Adultes</th><th>Enfants</th><th>B&eacute;b&eacute;s</th>
+          <th>Total</th><th>Commission</th><th>Source</th><th>Notes</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="bookingsTbody"></tbody>
+    </table>
+  </div>
+
+  <div id="calendarScroll">
+    <div id="calendarGrid"></div>
+  </div>
+
+  <div id="printPanel"></div>
+
+</div>
+
+<!-- FENÊTRE RÉSERVATION -->
+<div class="modal-backdrop" id="modalBackdrop" hidden>
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <h2 id="bookingModalTitle">Nouvelle r&eacute;servation</h2>
+      <button class="modal-close" id="closeModalXBtn" type="button">&#10005;</button>
+    </div>
+    <div class="modal-content">
+      <div class="field-row">
+        <div class="field">
+          <label for="bkCheckin">Arriv&eacute;e *</label>
+          <div class="date-input-wrap">
+            <input type="text" id="bkCheckin" placeholder="jj/mm/aaaa" inputmode="numeric" maxlength="10" autocomplete="off">
+            <button type="button" class="date-picker-btn" data-target="bkCheckin" aria-label="Choisir">&#128197;</button>
+            <div class="mini-calendar" id="miniCal_bkCheckin" hidden></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="bkCheckout">D&eacute;part *</label>
+          <div class="date-input-wrap">
+            <input type="text" id="bkCheckout" placeholder="jj/mm/aaaa" inputmode="numeric" maxlength="10" autocomplete="off">
+            <button type="button" class="date-picker-btn" data-target="bkCheckout" aria-label="Choisir">&#128197;</button>
+            <div class="mini-calendar" id="miniCal_bkCheckout" hidden></div>
+          </div>
+        </div>
+      </div>
+      <div class="nights-badge" id="nightsBadge">&mdash; nuits</div>
+
+      <div class="field" style="margin-top:-4px;">
+        <label class="checkbox-label">
+          <input type="checkbox" id="bkTrackTimes"><span>Heures d'arriv&eacute;e / d&eacute;part</span>
+        </label>
+      </div>
+      <div class="field-row" id="timesFields" style="display:none;">
+        <div class="field">
+          <label for="bkCheckinTime">Heure d'arriv&eacute;e</label>
+          <input type="time" id="bkCheckinTime">
+        </div>
+        <div class="field">
+          <label for="bkCheckoutTime">Heure de d&eacute;part</label>
+          <input type="time" id="bkCheckoutTime">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="bkClient">Client *</label>
+        <input type="text" id="bkClient" placeholder="Nom du locataire">
+      </div>
+      <div class="field">
+        <label for="bkPhone">T&eacute;l&eacute;phone</label>
+        <input type="tel" id="bkPhone" placeholder="+590 690 xx xx xx">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="bkAdults">Adultes</label>
+          <input type="number" id="bkAdults" min="0" value="1" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="bkChildren">Enfants</label>
+          <input type="number" id="bkChildren" min="0" value="0" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="bkBabies">B&eacute;b&eacute;s</label>
+          <input type="number" id="bkBabies" min="0" value="0" inputmode="numeric">
+        </div>
+      </div>
+      <div id="babyReminder" style="display:none;background:rgba(255,152,0,0.1);border:1px solid #FF9800;border-radius:8px;padding:8px 12px;font-size:12.5px;color:#E65100;margin-top:-10px;margin-bottom:12px;align-items:center;gap:8px;">
+        &#128118; Penser au lit parapluie !
+      </div>
+
+      <div class="field">
+        <label>Statut</label>
+        <div class="status-select-wrap" id="statusSelectWrap"></div>
+      </div>
+      <div class="field">
+        <label>Origine</label>
+        <div class="source-select-wrap" id="sourceSelectWrap"></div>
+      </div>
+
+      <div class="total-row">
+        <div class="field">
+          <label for="bkPricePerNight">Prix/nuit (&euro;)</label>
+          <input type="number" id="bkPricePerNight" min="0" step="0.01" inputmode="decimal" placeholder="0">
+        </div>
+        <div class="field">
+          <label for="bkTotal">Total (&euro;) *</label>
+          <input type="number" id="bkTotal" min="0" step="0.01" inputmode="decimal" placeholder="0">
+        </div>
+        <div class="field">
+          <label for="bkCommission">Commission (%)</label>
+          <input type="number" id="bkCommission" min="0" max="100" step="0.1" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Services factur&eacute;s</label>
+        <div id="servicesList"></div>
+        <button type="button" class="add-service-link" id="addServiceRowBtn">+ Ajouter un service</button>
+        <div class="nights-badge" id="servicesHint"></div>
+      </div>
+
+      <div class="field" style="margin-top:-4px;">
+        <label class="checkbox-label">
+          <input type="checkbox" id="bkTrackFlight"><span>&#9992;&#65039; Vol renseign&eacute;</span>
+        </label>
+      </div>
+      <div class="field-row" id="flightFields" style="display:none;">
+        <div class="field">
+          <label for="bkFlightNumber">N&deg; de vol</label>
+          <input type="text" id="bkFlightNumber" placeholder="ex&nbsp;: AF945" style="text-transform:uppercase;">
+        </div>
+        <div class="field">
+          <label for="bkFlightTime">Heure d'arriv&eacute;e (automatique)</label>
+          <input type="time" id="bkFlightTime">
+        </div>
+      </div>
+      <div class="nights-badge" id="flightStatus" style="display:none;margin-top:-6px;margin-bottom:8px;"></div>
+
+      <div class="field" style="margin-top:4px;">
+        <label class="checkbox-label">
+          <input type="checkbox" id="bkTrackDeposit"><span>Suivre un acompte</span>
+        </label>
+      </div>
+      <div class="field-row" id="depositFields" style="display:none;">
+        <div class="field">
+          <label for="bkDepositAmount">Montant acompte (&euro;)</label>
+          <input type="number" id="bkDepositAmount" min="0" step="0.01" inputmode="decimal">
+        </div>
+      </div>
+
+      <hr class="divider" style="margin:14px 0;">
+      <div class="field">
+        <label class="checkbox-label">
+          <input type="checkbox" id="bkInvoice"><span>&#129534; G&eacute;n&eacute;rer une facture</span>
+        </label>
+      </div>
+      <div id="invoiceFields" style="display:none;">
+        <div class="field">
+          <label for="bkTenantAddress">Adresse du locataire</label>
+          <textarea id="bkTenantAddress" rows="2" placeholder="Pour la facture"></textarea>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="bkNotes">Notes internes</label>
+        <textarea id="bkNotes" rows="2" placeholder="Informations compl&eacute;mentaires..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="left"><button class="btn danger" id="cancelBookingBtn">Annuler</button></div>
+      <div class="right"><button class="btn primary" id="saveBookingBtn">Enregistrer</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- FENÊTRE DÉTAIL RÉSERVATION -->
+<div class="modal-backdrop" id="detailBackdrop" hidden>
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <h2 id="detailTitle">D&eacute;tail</h2>
+      <div style="display:flex;gap:6px;">
+        <button class="btn small" id="detailEditBtn">&#9998; Modifier</button>
+        <button class="modal-close" id="closeDetailXBtn">&#10005;</button>
+      </div>
+    </div>
+    <div class="modal-content">
+      <div id="detailContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FENÊTRE LOGEMENTS -->
+<div class="modal-backdrop" id="apartmentsBackdrop" hidden>
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-head">
+      <h2>Logements</h2>
+      <button class="modal-close" id="closeApartmentsXBtn">&#10005;</button>
+    </div>
+    <div class="modal-content">
+      <div id="apartmentsList" style="margin-bottom:16px;"></div>
+      <hr class="divider">
+      <h3 style="font-size:14px;font-weight:700;margin:0 0 12px;">Ajouter un logement</h3>
+      <div class="field-row">
+        <div class="field"><label for="newAptName">Nom *</label><input type="text" id="newAptName" placeholder="ex&nbsp;: Villa Soleil"></div>
+        <div class="field"><label for="newAptType">Type</label>
+          <select id="newAptType">
+            <option value="">--</option>
+            <option>Studio</option><option>T2</option><option>T3</option><option>T4</option>
+            <option>Villa</option><option>Maison</option><option>Appartement</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label for="newAptPropertyAddress">Adresse du logement</label><input type="text" id="newAptPropertyAddress" placeholder="Adresse compl&egrave;te"></div>
+      <div class="field-row">
+        <div class="field"><label for="newAptOwner">Propri&eacute;taire</label><input type="text" id="newAptOwner" placeholder="Nom"></div>
+        <div class="field"><label for="newAptCommission">Commission (%)</label><input type="number" id="newAptCommission" min="0" max="100" value="20" inputmode="decimal"></div>
+      </div>
+      <div class="field"><label for="newAptOwnerPhone">T&eacute;l. propri&eacute;taire</label><input type="tel" id="newAptOwnerPhone" placeholder="+590 xxx xx xx xx"></div>
+      <div class="field"><label for="newAptOwnerEmail">Email propri&eacute;taire</label><input type="email" id="newAptOwnerEmail" placeholder="proprio@email.fr"></div>
+      <div class="field"><label for="newAptOwnerAddress">Adresse propri&eacute;taire</label><textarea id="newAptOwnerAddress" rows="2"></textarea></div>
+      <button class="btn primary" id="addApartmentBtn" style="width:100%;">+ Ajouter</button>
+      <div id="aptFormError" style="color:var(--st-annulation);font-size:12.5px;margin-top:8px;display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FENÊTRE STATISTIQUES LOGEMENT -->
+<div class="modal-backdrop" id="statsBackdrop" hidden>
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-head">
+      <h2 id="statsTitle">Statistiques</h2>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="eye-toggle" id="statsEyeBtn">&#128065;</button>
+        <button class="modal-close" id="closeStatsXBtn">&#10005;</button>
+      </div>
+    </div>
+    <div class="modal-content">
+      <div class="tab-btns">
+        <button class="tab-btn active" id="tabStatsBtn" data-tab="stats">&#128202; Statistiques</button>
+        <button class="tab-btn" id="tabAdvancesBtn" data-tab="advances">&#128182; Avances</button>
+        <button class="tab-btn" id="tabServicesGlobalBtn" data-tab="servicesglobal">&#129534; Services</button>
+        <button class="tab-btn" id="tabCommentBtn" data-tab="comment">&#128221; Commentaire</button>
+      </div>
+      <div id="statsContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FENÊTRE RÉCAP ANNUEL -->
+<div class="modal-backdrop" id="annualBackdrop" hidden>
+  <div class="modal" style="max-width:620px;">
+    <div class="modal-head">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button id="annualPrevYear" style="background:none;border:1.5px solid var(--line);border-radius:8px;padding:5px 12px;font-weight:600;color:var(--ink-soft);">&lsaquo;</button>
+        <h2 id="annualYearLabel">R&eacute;cap 2026</h2>
+        <button id="annualNextYear" style="background:none;border:1.5px solid var(--line);border-radius:8px;padding:5px 12px;font-weight:600;color:var(--ink-soft);">&rsaquo;</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="eye-toggle" id="annualEyeBtn">&#128065;</button>
+        <button class="modal-close" id="closeAnnualXBtn">&#10005;</button>
+      </div>
+    </div>
+    <div class="modal-content">
+      <div id="annualContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FENÊTRE SYNCHRO -->
+<div class="modal-backdrop" id="syncBackdrop" hidden>
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <h2>&#9729;&#65039; Synchronisation</h2>
+      <button class="modal-close" id="closeSyncXBtn">&#10005;</button>
+    </div>
+    <div class="modal-content">
+      <p style="font-size:13px;color:var(--ink-soft);">Synchronise tes donn&eacute;es avec Google Sheets pour y acc&eacute;der depuis n'importe quel appareil.</p>
+      <div class="field">
+        <label for="syncUrlInput">URL de l'application web (se termine par /exec)</label>
+        <input type="url" id="syncUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <div id="syncFormError" style="color:var(--st-annulation);font-size:12.5px;display:none;margin-bottom:8px;"></div>
+      <div id="syncStatusLine" style="font-size:12.5px;color:var(--ink-faint);margin-bottom:6px;"></div>
+      <button type="button" id="forceRefreshLink" class="add-service-link" style="font-size:12px;">&#128260; Forcer une actualisation maintenant</button>
+      <hr class="divider">
+      <h2 style="font-size:16px;margin-bottom:8px;">&#9992;&#65039; Suivi automatique des vols (optionnel)</h2>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin-top:0;">Cl&eacute; API AeroDataBox (RapidAPI) pour la mise &agrave; jour automatique des heures de vol.</p>
+      <div class="field">
+        <label for="flightApiKeyInput">Cl&eacute; API AeroDataBox</label>
+        <input type="text" id="flightApiKeyInput" placeholder="Colle ta cl&eacute; ici">
+      </div>
+      <button type="button" class="btn primary" id="saveFlightApiKeyBtn" style="width:100%;margin-bottom:8px;">Enregistrer la cl&eacute;</button>
+      <div id="flightApiKeyStatus" style="font-size:12px;color:var(--ink-faint);"></div>
+      <div class="modal-footer">
+        <div class="left"><button class="btn danger" id="disableSyncBtn">D&eacute;sactiver</button></div>
+        <div class="right">
+          <button class="btn" id="testSyncBtn">Tester</button>
+          <button class="btn primary" id="saveSyncBtn">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FENÊTRE SAUVEGARDE -->
+<div class="modal-backdrop" id="backupBackdrop" hidden>
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <h2>&#128190; Sauvegarde</h2>
+      <button class="modal-close" id="closeBackupXBtn">&#10005;</button>
+    </div>
+    <div class="modal-content">
+      <p style="font-size:13px;color:var(--ink-soft);">Exporte tes donn&eacute;es en JSON pour les garder en s&eacute;curit&eacute; ou les transf&eacute;rer.</p>
+      <button class="btn primary" id="exportBackupBtn" style="width:100%;margin-bottom:12px;">&#11015;&#65039; T&eacute;l&eacute;charger la sauvegarde</button>
+      <hr class="divider">
+      <p style="font-size:13px;color:var(--ink-soft);">Restaurer depuis un fichier de sauvegarde&nbsp;:</p>
+      <input type="file" id="restoreFileInput" accept=".json" style="margin-bottom:10px;font-size:13px;">
+      <button class="btn danger" id="restoreBackupBtn" style="width:100%;">&#11014;&#65039; Restaurer cette sauvegarde</button>
+    </div>
+  </div>
+</div>
+
+<!-- FENÊTRE MON PROFIL -->
+<div class="modal-backdrop" id="myProfileBackdrop" hidden>
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <h2>&#128100; Mon profil</h2>
+      <button class="modal-close" id="closeMyProfileXBtn">&#10005;</button>
+    </div>
+    <div class="modal-content">
+      <p style="font-size:13px;color:var(--ink-soft);margin-top:0;">Ces informations apparaissent dans toutes tes factures. Les champs * sont obligatoires.</p>
+      <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-faint);margin:0 0 10px;">Identit&eacute;</p>
+      <div class="field"><label for="profileName">Nom / Raison sociale *</label><input type="text" id="profileName" placeholder="ex&nbsp;: Marie Dupont Conciergerie"></div>
+      <div class="field"><label for="profileLegalForm">Forme juridique *</label>
+        <select id="profileLegalForm">
+          <option value="">-- Choisir --</option>
+          <option>Auto-entrepreneur</option><option>EI</option><option>EIRL</option>
+          <option>EURL</option><option>SARL</option><option>SAS</option><option>SASU</option><option>SA</option><option>Autre</option>
+        </select>
+      </div>
+      <div class="field"><label for="profileAddress">Adresse compl&egrave;te *</label><textarea id="profileAddress" rows="2"></textarea></div>
+      <div class="field-row">
+        <div class="field"><label for="profilePhone">T&eacute;l&eacute;phone</label><input type="tel" id="profilePhone"></div>
+        <div class="field"><label for="profileEmail">Email</label><input type="email" id="profileEmail"></div>
+      </div>
+      <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-faint);margin:16px 0 10px;">Informations fiscales</p>
+      <div class="field-row">
+        <div class="field"><label for="profileSiret">N&deg; SIRET *</label><input type="text" id="profileSiret" placeholder="123 456 789 00012"></div>
+        <div class="field"><label for="profileApe">Code APE</label><input type="text" id="profileApe" placeholder="6820B"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="profileTva">N&deg; TVA intracom.</label><input type="text" id="profileTva" placeholder="FR01 123 456 789"></div>
+        <div class="field"><label for="profileRcs">RCS / RM</label><input type="text" id="profileRcs" placeholder="RCS Pointe-&agrave;-Pitre"></div>
+      </div>
+      <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-faint);margin:16px 0 10px;">Conditions de paiement</p>
+      <div class="field-row">
+        <div class="field"><label for="profilePaymentDelay">D&eacute;lai</label>
+          <select id="profilePaymentDelay">
+            <option value="A reception">A r&eacute;ception</option>
+            <option value="8 jours">8 jours</option><option value="15 jours">15 jours</option>
+            <option value="30 jours">30 jours</option><option value="45 jours">45 jours</option><option value="60 jours">60 jours</option>
+          </select>
+        </div>
+        <div class="field"><label for="profilePaymentMethod">Mode</label>
+          <select id="profilePaymentMethod">
+            <option value="Virement bancaire">Virement</option>
+            <option value="Cheque">Ch&egrave;que</option><option value="Especes">Esp&egrave;ces</option><option value="Autre">Autre</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label for="profileIban">IBAN (virement)</label><input type="text" id="profileIban" placeholder="FR76 xxxx xxxx xxxx xxxx xxxx xxx"></div>
+      <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-faint);margin:16px 0 10px;">Mention TVA</p>
+      <div class="field"><label for="profileTvaStatus">R&eacute;gime TVA *</label>
+        <select id="profileTvaStatus">
+          <option value="non">TVA non applicable &mdash; art. 293 B du CGI</option>
+          <option value="oui">Assujetti &agrave; la TVA</option>
+        </select>
+      </div>
+      <div class="field" id="profileTvaRateField" style="display:none;"><label for="profileTvaRate">Taux TVA (%)</label><input type="number" id="profileTvaRate" placeholder="20" min="0" max="100" step="0.1" inputmode="decimal"></div>
+      <div class="field"><label for="profileLegal">Mention compl&eacute;mentaire</label><input type="text" id="profileLegal" placeholder="ex&nbsp;: RC Pro n&deg;xxx"></div>
+      <button class="btn primary" id="saveMyProfileBtn" style="width:100%;margin-top:8px;">Enregistrer mon profil</button>
+      <div id="profileSavedMsg" style="font-size:12px;color:var(--st-paye);margin-top:8px;display:none;">&#10003; Profil enregistr&eacute;.</div>
+    </div>
+  </div>
+</div>
+
+<!-- FENÊTRE AVANCES RECAP -->
+<div class="modal-backdrop" id="advancesRecapBackdrop" hidden>
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <h2>&#128182; Avances restantes</h2>
+      <button class="modal-close" id="closeAdvancesRecapXBtn">&#10005;</button>
+    </div>
+    <div class="modal-content">
+      <div id="advancesRecapContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FENÊTRE CONFIRM -->
+<div class="modal-backdrop" id="confirmBackdrop" hidden style="z-index:80;">
+  <div class="modal confirm-modal">
+    <div class="modal-head"><h2 id="confirmTitle">Confirmation</h2></div>
+    <div class="modal-content">
+      <p id="confirmMessage" style="font-size:14px;margin:0 0 4px;color:var(--ink);"></p>
+    </div>
+    <div class="modal-footer">
+      <div class="left"><button class="btn" id="confirmNoBtn">Annuler</button></div>
+      <div class="right"><button class="btn danger" id="confirmYesBtn">Confirmer</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- FENÊTRE RÉCAP MENSUEL -->
+<div class="modal-backdrop" id="monthlyRecapBackdrop" hidden>
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-head">
+      <h2 id="monthlyRecapTitle">Synth&egrave;se du mois</h2>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="eye-toggle" id="monthlyRecapEyeBtn">&#128065;</button>
+        <button class="modal-close" id="closeMonthlyRecapXBtn">&#10005;</button>
+      </div>
+    </div>
+    <div class="modal-content"><div id="monthlyRecapContent"></div></div>
+  </div>
+</div>
+
+<!-- TIROIR TABLEAU DE BORD -->
+<div class="drawer-backdrop" id="drawerBackdrop" hidden>
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <div class="drawer">
+    <div class="drawer-head">
+      <h2>&#128202; Tableau de bord</h2>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="eye-toggle" id="drawerEyeBtn">&#128065;</button>
+        <button class="modal-close" id="closeDrawerXBtn">&#10005;</button>
+      </div>
+    </div>
+    <div class="summary" id="summaryBar"></div>
+    <div class="drawer-actions">
+      <button id="syncBtn">&#9729;&#65039; Synchro</button>
+      <button id="annualRecapBtn">&#128202; R&eacute;cap annuel</button>
+      <button id="backupBtn">&#128190; Sauvegarde</button>
+      <button id="printBtn">&#128424;&#65039; Imprimer</button>
+      <button id="manageApartmentsBtn">&#127968; Logements</button>
+      <button id="myProfileBtn">&#128100; Mon profil</button>
+    </div>
+  </div>
+</div>
+
+<!-- EMPTY STATE -->
+<div id="emptyState" style="display:none;">
+  <div class="empty-state">
+    <div class="emoji">&#127968;</div>
+    <h2>Bienvenue dans Planning Conciergerie</h2>
+    <p style="color:var(--ink-faint);font-size:14px;">Commencez par ajouter votre premier logement.</p>
+    <button class="btn primary" id="emptyAddAptBtn" style="margin-top:16px;">+ Ajouter un logement</button>
+  </div>
+</div>
+
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════
+   CONFIGURATION SUPABASE + CODE INVITATION
+   ═══════════════════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://gfslntgsnrsqktiumblg.supabase.co'; 
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmc2xudGdzbnJzcWt0aXVtYmxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMDY3MjMsImV4cCI6MjEwNjY4MjcyM30.oVeQY1WO3_wGrjeRfSvVjuX-EGqIKyYdqxtSFR4esgg';  
+const INVITE_CODE   = 'CONCIERGERIE2026'; // code requis pour creer un compte
+
+/* ═══════════════════════════════════════════════════════
+   CONSTANTES
+   ═══════════════════════════════════════════════════════ */
+const LS_PREFIX = 'conciergerie_';
+const MONTH_NAMES = ['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
+const DOW_SHORT = ['Di','Lu','Ma','Me','Je','Ve','Sa'];
+const DOW_MINI  = ['D','L','M','M','J','V','S'];
+
+const STATUSES = [
+  {key:'indisponible', label:'Indisponible',       cls:'st-indisponible', color:'var(--st-indisponible)'},
+  {key:'option',       label:'Option',              cls:'st-option',       color:'var(--st-option)'},
+  {key:'nemeconcerne', label:'Ne me concerne pas',  cls:'st-nemeconcerne', color:'var(--st-nemeconcerne)'},
+  {key:'arrhes',       label:'Arrhes payees',       cls:'st-arrhes',       color:'var(--st-arrhes)'},
+  {key:'annulation',   label:'Annulation',          cls:'st-annulation',   color:'var(--st-annulation)'},
+  {key:'paye',         label:'Paye',                cls:'st-paye',         color:'var(--st-paye)'},
+];
+const STATUS_MAP = Object.fromEntries(STATUSES.map(s=>[s.key,s]));
+
+const SOURCES = [
+  {key:'airbnb',   label:'Airbnb',      color:'#D9484F'},
+  {key:'booking',  label:'Booking.com', color:'#003580'},
+  {key:'direct',   label:'Direct',      color:'#2F6F62'},
+  {key:'autre',    label:'Autre',       color:'#9E9E9E'},
+];
+const SOURCE_MAP = Object.fromEntries(SOURCES.map(s=>[s.key,s]));
+
+/* ═══════════════════════════════════════════════════════
+   ETAT GLOBAL
+   ═══════════════════════════════════════════════════════ */
+let apartments = [];
+let bookings   = [];
+let currentYear, currentMonth;
+let viewMode = 'month';
+let selectedStatus = 'option';
+let selectedSource = 'direct';
+let currentEditId = null;
+let currentServices = [];
+let privacyMode = false;
+let statsApartmentId = null;
+let statsYear = new Date().getFullYear();
+let annualYear = new Date().getFullYear();
+let _supabaseSession = null;
+let _savingInProgress = false;
+let _lastSaveTimestamp = 0;
+let autoRefreshTimer = null;
+let flightAutoUpdateTimer = null;
+let flightCheckDebounce = null;
+let dragState = null;
+let detailBookingId = null;
+let confirmCallback = null;
+let activeTab = 'stats';
+
+/* ═══════════════════════════════════════════════════════
+   HELPERS SUPABASE
+   ═══════════════════════════════════════════════════════ */
+function sbConfigured(){ return !!(SUPABASE_URL && SUPABASE_ANON); }
+
+function sbHeaders(){
+  const h = { 'apikey': SUPABASE_ANON, 'Content-Type': 'application/json' };
+  if(_supabaseSession && _supabaseSession.access_token)
+    h['Authorization'] = 'Bearer ' + _supabaseSession.access_token;
+  return h;
+}
+
+async function sbGet(key){
+  if(!sbConfigured() || !_supabaseSession) return null;
+  try{
+    const ctrl = new AbortController();
+    const tid  = setTimeout(()=>ctrl.abort(), 6000);
+    const res  = await fetch(
+      SUPABASE_URL+'/rest/v1/user_data?user_id=eq.'+_supabaseSession.user.id+'&key=eq.'+encodeURIComponent(key)+'&select=value',
+      {headers: sbHeaders(), signal: ctrl.signal}
+    );
+    clearTimeout(tid);
+    if(!res.ok) return null;
+    const rows = await res.json();
+    return rows.length ? rows[0].value : null;
+  }catch(e){ return null; }
+}
+
+async function sbSet(key, value){
+  if(!sbConfigured() || !_supabaseSession) return false;
+  try{
+    const ctrl = new AbortController();
+    const tid  = setTimeout(()=>ctrl.abort(), 8000);
+    const res  = await fetch(SUPABASE_URL+'/rest/v1/user_data', {
+      method: 'POST',
+      headers: {...sbHeaders(), 'Prefer':'resolution=merge-duplicates'},
+      body: JSON.stringify({user_id: _supabaseSession.user.id, key, value}),
+      signal: ctrl.signal
+    });
+    clearTimeout(tid);
+    return res.ok || res.status === 201;
+  }catch(e){ return false; }
+}
+
+function startAntiPausePing(){
+  if(!sbConfigured()) return;
+  const PING_KEY = LS_PREFIX+'lastPing';
+  async function ping(){
+    try{
+      const last = parseInt(localStorage.getItem(PING_KEY)||'0');
+      if(Date.now()-last < 4*24*60*60*1000) return;
+      await fetch(SUPABASE_URL+'/rest/v1/user_data?select=key&limit=1', {headers: sbHeaders()});
+      localStorage.setItem(PING_KEY, String(Date.now()));
+    }catch(e){}
+  }
+  ping();
+  setInterval(ping, 6*60*60*1000);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CACHE LOCAL + STORAGE
+   ═══════════════════════════════════════════════════════ */
+function lsCacheKey(k){
+  return LS_PREFIX + (_supabaseSession&&_supabaseSession.user?_supabaseSession.user.id:'local') + '_' + k;
+}
+function lsSet(k,v){ try{localStorage.setItem(lsCacheKey(k),v);}catch(e){} }
+function lsGet(k){ try{return localStorage.getItem(lsCacheKey(k));}catch(e){return null;} }
+
+async function loadDataFromLocal(){
+  try{ apartments = JSON.parse(lsGet('apartments')||'[]'); }catch(e){ apartments=[]; }
+  try{ bookings   = JSON.parse(lsGet('bookings')||'[]');   }catch(e){ bookings=[]; }
+}
+
+async function loadData(){
+  await loadDataFromLocal();
+  if(sbConfigured() && _supabaseSession){
+    try{
+      const [rawA, rawB] = await Promise.all([sbGet('apartments'), sbGet('bookings')]);
+      if(rawA){ apartments = JSON.parse(rawA); lsSet('apartments', rawA); }
+      if(rawB){ bookings   = JSON.parse(rawB); lsSet('bookings',   rawB); }
+    }catch(e){}
+  }
+  // Compatibilite Google Sheets (legacy)
+  const syncUrl = localStorage.getItem(LS_PREFIX+'syncUrl');
+  if(syncUrl && !sbConfigured()){
+    try{
+      const ctrl = new AbortController();
+      setTimeout(()=>ctrl.abort(), 5000);
+      const [rA, rB] = await Promise.all([
+        fetch(syncUrl+'?action=get&key=apartments&t='+Date.now(), {signal: ctrl.signal}),
+        fetch(syncUrl+'?action=get&key=bookings&t='+Date.now(), {signal: ctrl.signal})
+      ]);
+      if(rA.ok){ const t=await rA.text(); if(t&&t.trim()){ apartments=JSON.parse(t); lsSet('apartments',t); } }
+      if(rB.ok){ const t=await rB.text(); if(t&&t.trim()){ bookings=JSON.parse(t); lsSet('bookings',t); } }
+    }catch(e){}
+  }
+}
+
+async function saveApartments(){
+  _savingInProgress = true; _lastSaveTimestamp = Date.now();
+  const v = JSON.stringify(apartments);
+  lsSet('apartments', v);
+  if(sbConfigured() && _supabaseSession) await sbSet('apartments', v);
+  _savingInProgress = false;
+}
+
+async function saveBookings(){
+  _savingInProgress = true; _lastSaveTimestamp = Date.now();
+  const v = JSON.stringify(bookings);
+  lsSet('bookings', v);
+  if(sbConfigured() && _supabaseSession) await sbSet('bookings', v);
+  _savingInProgress = false;
+}
+
+async function silentRefresh(){
+  if(_savingInProgress) return;
+  if(Date.now()-_lastSaveTimestamp < 8000) return;
+  if(anyModalOpen()) return;
+  await loadData();
+  renderAll();
+}
+
+function startAutoRefresh(){
+  stopAutoRefresh();
+  autoRefreshTimer = setInterval(silentRefresh, 5000);
+}
+function stopAutoRefresh(){
+  if(autoRefreshTimer){ clearInterval(autoRefreshTimer); autoRefreshTimer=null; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROFIL CONCIERGERIE
+   ═══════════════════════════════════════════════════════ */
+function getMyProfile(){
+  try{
+    const raw = localStorage.getItem(LS_PREFIX+'myProfile');
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveMyProfile(p){ try{localStorage.setItem(LS_PREFIX+'myProfile', JSON.stringify(p));}catch(e){} }
+
+/* ═══════════════════════════════════════════════════════
+   UTILITAIRES
+   ═══════════════════════════════════════════════════════ */
+function generateId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function pad(n){ return n<10?'0'+n:''+n; }
+function toISO(y,m,d){ return y+'-'+pad(m+1)+'-'+pad(d); }
+function addDaysISO(iso, n){
+  const d = new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n);
+  return d.toISOString().slice(0,10);
+}
+function utcVal(iso){ return new Date(iso+'T00:00:00Z').getTime(); }
+function nightsBetween(a,b){ return Math.max(0,Math.round((utcVal(b)-utcVal(a))/86400000)); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function parseISO(s){ const p=s.split('-'); return {y:+p[0],m:+p[1]-1,d:+p[2]}; }
+function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+function fmtDateShort(iso){
+  if(!iso) return ''; const p=parseISO(iso);
+  return pad(p.d)+'/'+pad(p.m+1)+'/'+p.y;
+}
+function frToISO(s){
+  if(!s||s.length!==10) return '';
+  const p=s.split('/'); if(p.length!==3) return '';
+  return p[2]+'-'+p[1]+'-'+p[0];
+}
+function isoToFR(iso){ return iso?fmtDateShort(iso):''; }
+function fmtMonthLabel(y,m){ return MONTH_NAMES[m].charAt(0).toUpperCase()+MONTH_NAMES[m].slice(1)+' '+y; }
+function fmtEuro(v){ return (Math.round((v||0)*100)/100).toFixed(2).replace('.',',')+' €'; }
+function maskEuro(v){ return privacyMode ? '•••' : fmtEuro(v); }
+function maskNum(v){ return privacyMode ? '•••' : String(v); }
+
+function mondayOf(iso){
+  const d=new Date(iso+'T00:00:00Z'), dow=d.getUTCDay(), diff=(dow+6)%7;
+  d.setUTCDate(d.getUTCDate()-diff); return d.toISOString().slice(0,10);
+}
+
+function getCommissionAmount(b){
+  const pct = b.commissionPercent!=null ? b.commissionPercent : 20;
+  return Math.round((b.total||0)*pct/100*100)/100;
+}
+function getServicesTotal(b){
+  if(!b.services||!b.services.length) return 0;
+  return b.services.reduce((s,sv)=>s+(sv.price>0?sv.price:0),0);
+}
+function getGlobalServicesTotal(apt, startISO, endISO){
+  return (apt.globalServices||[])
+    .filter(s=>s.date&&s.date>=startISO&&s.date<endISO&&s.price>0)
+    .reduce((s,sv)=>s+(sv.price||0),0);
+}
+
+/* ═══════════════════════════════════════════════════════
+   MASQUE DATES & TELEPHONE
+   ═══════════════════════════════════════════════════════ */
+function attachDateMask(input){
+  if(!input) return;
+  input.addEventListener('input',()=>{
+    let v=input.value.replace(/[^0-9]/g,'');
+    if(v.length>=3) v=v.slice(0,2)+'/'+v.slice(2);
+    if(v.length>=6) v=v.slice(0,5)+'/'+v.slice(5);
+    input.value=v.slice(0,10);
+  });
+}
+function attachPhoneMask(input){
+  if(!input) return;
+  input.addEventListener('input',()=>{
+    const raw=input.value;
+    if(window.libphonenumber && window.libphonenumber.AsYouType){
+      try{
+        const hasPlus=raw.trim().charAt(0)==='+';
+        const fmt=new window.libphonenumber.AsYouType(hasPlus?undefined:'FR');
+        const cursorEnd=input.selectionEnd===raw.length;
+        const formatted=fmt.input(raw);
+        input.value=formatted;
+        if(cursorEnd) input.setSelectionRange(formatted.length,formatted.length);
+        return;
+      }catch(e){}
+    }
+    const hasPlus=raw.trim().charAt(0)==='+';
+    const digits=raw.replace(/\D/g,'').slice(0,15);
+    const groups=hasPlus?[3,3,2,2,2,2]:[4,2,2,2,2];
+    const parts=[]; let idx=0;
+    groups.forEach(len=>{ if(idx<digits.length){ parts.push(digits.slice(idx,idx+len)); idx+=len; } });
+    if(idx<digits.length) parts.push(digits.slice(idx));
+    input.value=(hasPlus?'+':'')+parts.join(' ');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   MINI-CALENDRIER
+   ═══════════════════════════════════════════════════════ */
+let miniCalStates = {};
+
+function toggleMiniCalendar(targetId){
+  const calId='miniCal_'+targetId;
+  const cal=document.getElementById(calId);
+  if(!cal) return;
+  closeAllMiniCalendars(calId);
+  if(!miniCalStates[calId]){ miniCalStates[calId]={year:new Date().getFullYear(),month:new Date().getMonth()}; }
+  cal.hidden=!cal.hidden;
+  if(!cal.hidden) renderMiniCalendar(calId, targetId);
+}
+
+function renderMiniCalendar(calId, targetId){
+  const cal=document.getElementById(calId);
+  if(!cal||cal.hidden) return;
+  const st=miniCalStates[calId]||{year:new Date().getFullYear(),month:new Date().getMonth()};
+  const {year:y,month:m}=st;
+  const todayI=todayISO();
+  const inputEl=document.getElementById(targetId);
+  const selectedISO=inputEl?frToISO(inputEl.value):'';
+  const firstDay=new Date(Date.UTC(y,m,1)).getUTCDay();
+  const days=daysInMonth(y,m);
+  let html='<div class="mini-cal-header">';
+  html+=`<button type="button" onclick="miniCalNav('${calId}','${targetId}',-1)">&lsaquo;</button>`;
+  html+=`<span>${MONTH_NAMES[m].charAt(0).toUpperCase()+MONTH_NAMES[m].slice(1)} ${y}</span>`;
+  html+=`<button type="button" onclick="miniCalNav('${calId}','${targetId}',1)">&rsaquo;</button>`;
+  html+='</div><div class="mini-cal-grid">';
+  DOW_MINI.forEach(d=>html+=`<div class="mini-cal-dow">${d}</div>`);
+  const startOffset=(firstDay+6)%7;
+  for(let i=0;i<startOffset;i++) html+='<div></div>';
+  for(let d=1;d<=days;d++){
+    const iso=toISO(y,m,d);
+    const cls=['mini-calendar-day',iso===todayI?'today-marker':'',iso===selectedISO?'selected':''].filter(Boolean).join(' ');
+    html+=`<div class="${cls}" data-iso="${iso}" onclick="pickMiniCalDate('${calId}','${targetId}','${iso}')">${d}</div>`;
+  }
+  html+='</div>';
+  cal.innerHTML=html;
+}
+
+function miniCalNav(calId, targetId, dir){
+  if(!miniCalStates[calId]) miniCalStates[calId]={year:new Date().getFullYear(),month:new Date().getMonth()};
+  let {year:y,month:m}=miniCalStates[calId];
+  m+=dir; if(m<0){m=11;y--;} if(m>11){m=0;y++;}
+  miniCalStates[calId]={year:y,month:m};
+  renderMiniCalendar(calId,targetId);
+}
+
+function pickMiniCalDate(calId, targetId, iso){
+  const input=document.getElementById(targetId);
+  if(input){ input.value=isoToFR(iso); input.dispatchEvent(new Event('input',{bubbles:true})); }
+  const cal=document.getElementById(calId);
+  if(cal) cal.hidden=true;
+}
+
+function closeAllMiniCalendars(except){
+  document.querySelectorAll('.mini-calendar').forEach(c=>{ if(c.id!==except) c.hidden=true; });
+}
+
+/* ═══════════════════════════════════════════════════════
+   OPEN MODAL (scroll en haut)
+   ═══════════════════════════════════════════════════════ */
+function openModal(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.hidden=false;
+  requestAnimationFrame(()=>{ const m=el.querySelector('.modal'); if(m) m.scrollTop=0; });
+}
+
+function anyModalOpen(){
+  const ids=['modalBackdrop','apartmentsBackdrop','syncBackdrop','statsBackdrop',
+             'annualBackdrop','advancesRecapBackdrop','monthlyRecapBackdrop',
+             'myProfileBackdrop','backupBackdrop','drawerBackdrop','detailBackdrop','confirmBackdrop'];
+  return ids.some(id=>{ const el=document.getElementById(id); return el&&!el.hidden; });
+}
+
+/* ═══════════════════════════════════════════════════════
+   CONFIRM DIALOG
+   ═══════════════════════════════════════════════════════ */
+function showConfirm(msg, cb){
+  document.getElementById('confirmMessage').textContent=msg;
+  confirmCallback=cb;
+  openModal('confirmBackdrop');
+}
+
+/* ═══════════════════════════════════════════════════════
+   TIROIR / TABLEAU DE BORD
+   ═══════════════════════════════════════════════════════ */
+function openDrawer(){ renderSummary(); document.getElementById('drawerBackdrop').hidden=false; }
+function closeDrawer(){ document.getElementById('drawerBackdrop').hidden=true; }
+
+function renderSummary(){
+  const bar=document.getElementById('summaryBar');
+  const now=new Date();
+  const y=currentYear||now.getFullYear(), m=currentMonth!=null?currentMonth:now.getMonth();
+  const mStartISO=toISO(y,m,1);
+  const mDays=daysInMonth(y,m);
+  const mEndISO=addDaysISO(mStartISO,mDays);
+  let occupiedNights=0, revenue=0, arrivals=0, myCommission=0, myServices=0, advancesTotal=0;
+  bookings.forEach(b=>{
+    if(['annulation','nemeconcerne'].includes(b.status)) return;
+    if(b.checkin<mEndISO&&b.checkout>mStartISO){
+      const cs=b.checkin<mStartISO?mStartISO:b.checkin;
+      const ce=b.checkout>mEndISO?mEndISO:b.checkout;
+      occupiedNights+=Math.max(0,Math.round((utcVal(ce)-utcVal(cs))/86400000));
+    }
+    if(b.checkin>=mStartISO&&b.checkin<mEndISO){
+      arrivals++;
+      if(['arrhes','paye'].includes(b.status)){
+        revenue+=(b.total||0);
+        myCommission+=getCommissionAmount(b);
+        myServices+=getServicesTotal(b);
+      }
+    }
+  });
+  apartments.forEach(apt=>{
+    myServices+=getGlobalServicesTotal(apt,mStartISO,mEndISO);
+    (apt.advances||[]).forEach(a=>{ if(!a.reimbursed) advancesTotal+=(a.amount||0); });
+  });
+  const capacity=apartments.length*mDays;
+  const occRate=capacity>0?Math.round(occupiedNights/capacity*100):0;
+  bar.innerHTML=`
+    <div class="card"><div class="label">Nuitees occupees</div><div class="value">${maskNum(occupiedNights)}</div></div>
+    <div class="card"><div class="label">Taux d'occupation</div><div class="value">${privacyMode?'•••':occRate+'%'}</div></div>
+    <div class="card"><div class="label">Revenu confirme</div><div class="value">${maskEuro(Math.round(revenue))}</div></div>
+    <div class="card"><div class="label">Arrivees ce mois</div><div class="value">${maskNum(arrivals)}</div></div>
+    <div class="card" style="border-color:var(--accent);"><div class="label">Ma commission (mois)</div><div class="value" style="color:var(--accent);">${maskEuro(Math.round(myCommission*100)/100)}</div></div>
+    <div class="card" style="border-color:#9A8C78;"><div class="label">Services factures (mois)</div><div class="value" style="color:#9A8C78;">${maskEuro(Math.round(myServices*100)/100)}</div></div>
+    <div class="card" style="border-color:var(--accent);"><div class="label">Avances restantes</div><div class="value" style="color:var(--accent);">${maskEuro(Math.round(advancesTotal*100)/100)}</div></div>
+    <div class="card" style="border-color:var(--accent);background:var(--accent-soft);"><div class="label">&#128176; Total gagne (mois)</div><div class="value" style="color:var(--accent-dark);font-size:22px;">${maskEuro(Math.round((myCommission+myServices)*100)/100)}</div></div>
+  `;
+}
+
+function togglePrivacyMode(){
+  privacyMode=!privacyMode;
+  document.querySelectorAll('.eye-toggle').forEach(btn=>btn.classList.toggle('active',privacyMode));
+  renderSummary();
+  if(!document.getElementById('statsBackdrop').hidden) renderApartmentStats();
+  if(!document.getElementById('annualBackdrop').hidden) renderAnnualRecap();
+  if(!document.getElementById('monthlyRecapBackdrop').hidden) renderMonthlyRecap();
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDU PRINCIPAL
+   ═══════════════════════════════════════════════════════ */
+function renderAll(){
+  renderCalendar();
+  renderTodayPanel();
+  renderBookingsList();
+  const legend=document.querySelector('.apt-label-col');
+  if(legend) renderLegend();
+}
+
+function renderLegend(){
+  if(!apartments.length){
+    document.getElementById('calendarScroll').style.display='none';
+    document.getElementById('emptyState').style.display='block';
+    return;
+  }
+  document.getElementById('calendarScroll').style.display='';
+  document.getElementById('emptyState').style.display='none';
+}
+
+/* ═══════════════════════════════════════════════════════
+   CALENDRIER MENSUEL
+   ═══════════════════════════════════════════════════════ */
+function renderCalendar(){
+  const now=new Date();
+  if(currentYear==null) currentYear=now.getFullYear();
+  if(currentMonth==null) currentMonth=now.getMonth();
+  document.getElementById('monthLabel').textContent=fmtMonthLabel(currentYear,currentMonth);
+  document.getElementById('viewSelectBtn').textContent=
+    viewMode==='month'?'?? Mois':viewMode==='week'?'?? Semaine':'??️ Année';
+
+  if(viewMode==='year'){ renderYearView(); return; }
+  if(viewMode==='week'){ renderWeekView(); return; }
+
+  const grid=document.getElementById('calendarGrid');
+  grid.innerHTML='';
+  if(!apartments.length){ renderLegend(); return; }
+
+  const todayI=todayISO();
+  const monthStartISO=toISO(currentYear,currentMonth,1);
+  const days=daysInMonth(currentYear,currentMonth);
+  const colW=34, minBarH=28;
+  const totalCols=days*2;
+
+  // Grid CSS
+  grid.style.display='grid';
+  grid.style.gridTemplateColumns=`160px repeat(${totalCols},${colW/2}px)`;
+  grid.style.gridTemplateRows=`auto repeat(${apartments.length},${minBarH+8}px)`;
+
+  // Corner
+  const corner=document.createElement('div');
+  corner.className='corner-cell';
+  corner.style.gridColumn='1';
+  corner.style.gridRow='1';
+  grid.appendChild(corner);
+
+  // En-tetes jours
+  for(let d=1;d<=days;d++){
+    const dISO=addDaysISO(monthStartISO,d-1);
+    const p=parseISO(dISO);
+    const dateObj=new Date(Date.UTC(p.y,p.m,p.d));
+    const dow=dateObj.getUTCDay();
+    const isWeekend=dow===0||dow===6;
+    const isToday=dISO===todayI;
+    const cell=document.createElement('div');
+    cell.className='day-head'+(isWeekend?' weekend':'')+(isToday?' today':'');
+    cell.style.gridColumn=`${(d-1)*2+2} / span 2`;
+    cell.style.gridRow='1';
+    cell.innerHTML=`<span class="dow">${DOW_SHORT[dow]}</span><span class="num">${d}</span>`;
+    grid.appendChild(cell);
+  }
+
+  // Lignes logements
+  apartments.forEach((apt,aptIdx)=>{
+    // Label
+    const label=document.createElement('div');
+    label.className='apt-info';
+    label.style.gridColumn='1';
+    label.style.gridRow=`${aptIdx+2}`;
+    label.style.position='sticky';
+    label.style.left='0';
+    label.style.zIndex='20';
+    label.style.background='var(--surface)';
+    label.innerHTML=`<div class="apt-name">${escapeHtml(apt.name)}</div><div class="apt-owner">${escapeHtml(apt.owner||'')}</div>`;
+    label.addEventListener('click',()=>openApartmentStatsModal(apt.id));
+    grid.appendChild(label);
+
+    // Zone jours
+    const daysWrap=document.createElement('div');
+    daysWrap.className='apt-days apartment-row';
+    daysWrap.style.gridColumn=`2 / span ${totalCols}`;
+    daysWrap.style.gridRow=`${aptIdx+2}`;
+    daysWrap.style.display='grid';
+    daysWrap.style.gridTemplateColumns=`repeat(${totalCols},${colW/2}px)`;
+    daysWrap.style.position='relative';
+    daysWrap.style.height=(minBarH+8)+'px';
+
+    for(let d=1;d<=days;d++){
+      const dISO=addDaysISO(monthStartISO,d-1);
+      const dateObj=new Date(dISO+'T00:00:00Z');
+      const dow=dateObj.getUTCDay();
+      const isWeekend=dow===0||dow===6;
+      const isToday=dISO===todayI;
+      const cell=document.createElement('div');
+      cell.className='day-cell'+(isWeekend?' weekend':'')+(isToday?' today':'');
+      cell.style.gridColumn=`${(d-1)*2+1} / span 2`;
+      cell.addEventListener('click',()=>openNewBookingForCell(apt.id,dISO));
+      daysWrap.appendChild(cell);
+    }
+
+    // Barres de reservation
+    const aptBookings=bookings.filter(b=>b.apartmentId===apt.id&&!['nemeconcerne'].includes(b.status));
+    aptBookings.forEach(b=>{
+      if(b.checkout<=monthStartISO||b.checkin>=addDaysISO(monthStartISO,days)) return;
+      const visStart=b.checkin<monthStartISO?monthStartISO:b.checkin;
+      const visEnd=b.checkout>addDaysISO(monthStartISO,days)?addDaysISO(monthStartISO,days):b.checkout;
+      const startDay=nightsBetween(monthStartISO,visStart);
+      const barDays=nightsBetween(visStart,visEnd);
+      if(barDays<=0) return;
+      const bar=document.createElement('div');
+      bar.className='booking-bar';
+      const st=STATUS_MAP[b.status]||STATUS_MAP['option'];
+      const src=SOURCE_MAP[b.source||'direct'];
+      bar.style.cssText=`left:${startDay*colW+2}px;width:${barDays*colW-4}px;background:${st.color};top:4px;`;
+      const srcDot=`<span class="bsource" style="background:${src?src.color:'#9E9E9E'};"></span>`;
+      bar.innerHTML=srcDot+`<span class="bname">${escapeHtml(b.client||'')}</span>`;
+      bar.addEventListener('click',e=>{ e.stopPropagation(); openBookingDetail(b.id); });
+      daysWrap.appendChild(bar);
+    });
+
+    grid.appendChild(daysWrap);
+  });
+}
+
+function renderWeekView(){
+  const grid=document.getElementById('calendarGrid');
+  grid.innerHTML='';
+  const todayI=todayISO();
+  const weekStart=mondayOf(toISO(currentYear,currentMonth,1));
+  const days=7;
+  const colW=90;
+  const totalCols=days*2;
+
+  grid.style.display='grid';
+  grid.style.gridTemplateColumns=`160px repeat(${totalCols},${colW/2}px)`;
+  grid.style.gridTemplateRows=`auto repeat(${apartments.length},36px)`;
+
+  const corner=document.createElement('div');
+  corner.className='corner-cell';
+  corner.style.gridColumn='1';
+  corner.style.gridRow='1';
+  grid.appendChild(corner);
+
+  for(let d=0;d<days;d++){
+    const dISO=addDaysISO(weekStart,d);
+    const p=parseISO(dISO);
+    const dateObj=new Date(Date.UTC(p.y,p.m,p.d));
+    const dow=dateObj.getUTCDay();
+    const isWeekend=dow===0||dow===6;
+    const isToday=dISO===todayI;
+    const cell=document.createElement('div');
+    cell.className='day-head'+(isWeekend?' weekend':'')+(isToday?' today':'');
+    cell.style.gridColumn=`${d*2+2} / span 2`;
+    cell.style.gridRow='1';
+    cell.innerHTML=`<span class="dow">${DOW_SHORT[dow]}</span><span class="num">${p.d}/${pad(p.m+1)}</span>`;
+    grid.appendChild(cell);
+  }
+
+  apartments.forEach((apt,aptIdx)=>{
+    const label=document.createElement('div');
+    label.className='apt-info';
+    label.style.cssText=`grid-column:1;grid-row:${aptIdx+2};position:sticky;left:0;z-index:20;background:var(--surface);`;
+    label.innerHTML=`<div class="apt-name">${escapeHtml(apt.name)}</div>`;
+    label.addEventListener('click',()=>openApartmentStatsModal(apt.id));
+    grid.appendChild(label);
+
+    const wrap=document.createElement('div');
+    wrap.className='apt-days apartment-row';
+    wrap.style.cssText=`grid-column:2/span ${totalCols};grid-row:${aptIdx+2};display:grid;grid-template-columns:repeat(${totalCols},${colW/2}px);position:relative;height:36px;`;
+
+    for(let d=0;d<days;d++){
+      const dISO=addDaysISO(weekStart,d);
+      const dateObj=new Date(dISO+'T00:00:00Z');
+      const dow=dateObj.getUTCDay();
+      const isWeekend=dow===0||dow===6;
+      const isToday=dISO===todayI;
+      const cell=document.createElement('div');
+      cell.className='day-cell'+(isWeekend?' weekend':'')+(isToday?' today':'');
+      cell.style.gridColumn=`${d*2+1}/span 2`;
+      cell.addEventListener('click',()=>openNewBookingForCell(apt.id,dISO));
+      wrap.appendChild(cell);
+    }
+
+    const weekEnd=addDaysISO(weekStart,7);
+    bookings.filter(b=>b.apartmentId===apt.id&&b.checkout>weekStart&&b.checkin<weekEnd&&!['nemeconcerne'].includes(b.status)).forEach(b=>{
+      const visStart=b.checkin<weekStart?weekStart:b.checkin;
+      const visEnd=b.checkout>weekEnd?weekEnd:b.checkout;
+      const startDay=nightsBetween(weekStart,visStart);
+      const barDays=nightsBetween(visStart,visEnd);
+      if(barDays<=0) return;
+      const bar=document.createElement('div');
+      bar.className='booking-bar';
+      const st=STATUS_MAP[b.status]||STATUS_MAP['option'];
+      bar.style.cssText=`left:${startDay*colW+2}px;width:${barDays*colW-4}px;background:${st.color};top:4px;`;
+      bar.innerHTML=`<span class="bname">${escapeHtml(b.client||'')}</span>`;
+      bar.addEventListener('click',e=>{ e.stopPropagation(); openBookingDetail(b.id); });
+      wrap.appendChild(bar);
+    });
+    grid.appendChild(wrap);
+  });
+}
+
+function renderYearView(){
+  const grid=document.getElementById('calendarGrid');
+  grid.innerHTML='';
+  grid.style.display='block';
+  const wrap=document.createElement('div');
+  wrap.className='year-grid';
+
+  for(let m=0;m<12;m++){
+    const cell=document.createElement('div');
+    cell.className='year-month-cell';
+    const monthISO=toISO(currentYear,m,1);
+    const days=daysInMonth(currentYear,m);
+    const monthEnd=addDaysISO(monthISO,days);
+    const monthBk=bookings.filter(b=>b.checkout>monthISO&&b.checkin<monthEnd&&!['annulation','nemeconcerne'].includes(b.status));
+    const miniBars=monthBk.slice(0,5).map(b=>{
+      const st=STATUS_MAP[b.status]||STATUS_MAP['option'];
+      return `<div class="year-mini-bar" style="background:${st.color};width:${Math.min(100,nightsBetween(b.checkin,b.checkout)/days*100)}%;"></div>`;
+    }).join('');
+    cell.innerHTML=`<h3>${MONTH_NAMES[m].charAt(0).toUpperCase()+MONTH_NAMES[m].slice(1)}</h3><div class="year-mini-bars">${miniBars}</div>`;
+    cell.addEventListener('click',()=>{ viewMode='month'; currentMonth=m; renderCalendar(); });
+    wrap.appendChild(cell);
+  }
+  grid.appendChild(wrap);
+}
+
+/* ═══════════════════════════════════════════════════════
+   PANNEAUX AUJOURD'HUI / DEMAIN
+   ═══════════════════════════════════════════════════════ */
+function renderTodayPanel(){
+  renderDayPanel('todayPanel', todayISO(), "Aujourd'hui");
+  renderDayPanel('tomorrowPanel', addDaysISO(todayISO(),1), 'Demain');
+}
+
+function renderDayPanel(panelId, dateISO, title){
+  const panel=document.getElementById(panelId);
+  if(!panel) return;
+  const p=parseISO(dateISO);
+  const arrivals=bookings.filter(b=>b.checkin===dateISO&&!['annulation','nemeconcerne'].includes(b.status));
+  const departures=bookings.filter(b=>b.checkout===dateISO&&!['annulation','nemeconcerne'].includes(b.status));
+  const babies=arrivals.filter(b=>b.babies>0);
+  let html=`<div class="today-panel-title">${title} &mdash; ${pad(p.d)}/${pad(p.m+1)}</div>`;
+  if(arrivals.length){
+    html+=`<div style="font-size:11px;color:var(--ink-faint);font-weight:700;margin-bottom:2px;">ARRIVEES (${arrivals.length})</div>`;
+    arrivals.forEach(b=>{
+      const apt=apartments.find(a=>a.id===b.apartmentId);
+      const st=STATUS_MAP[b.status]||STATUS_MAP['option'];
+      const fly=b.flightNumber?` &#9992;&#65039; ${b.flightNumber}${b.flightTime?' '+b.flightTime:''}`:'' ;
+      html+=`<div class="tp-item" onclick="openBookingDetail('${b.id}')"><span style="background:${st.color};"></span>${escapeHtml(b.client||'?')} &mdash; ${escapeHtml(apt?apt.name:'?')}${fly}${b.babies>0?' &#128118;':''}</div>`;
+    });
+  }
+  if(departures.length){
+    html+=`<div style="font-size:11px;color:var(--ink-faint);font-weight:700;margin-bottom:2px;margin-top:4px;">DEPARTS (${departures.length})</div>`;
+    departures.forEach(b=>{
+      const apt=apartments.find(a=>a.id===b.apartmentId);
+      const st=STATUS_MAP[b.status]||STATUS_MAP['option'];
+      html+=`<div class="tp-item" onclick="openBookingDetail('${b.id}')"><span style="background:${st.color};"></span>${escapeHtml(b.client||'?')} &mdash; ${escapeHtml(apt?apt.name:'?')}</div>`;
+    });
+  }
+  if(!arrivals.length&&!departures.length) html+=`<div style="font-size:12px;color:var(--ink-faint);">Aucune activite</div>`;
+  if(babies.length) html+=`<div style="font-size:11.5px;color:#E65100;margin-top:4px;">&#128118; Lit parapluie requis</div>`;
+  panel.innerHTML=html;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LISTE COMPLETE
+   ═══════════════════════════════════════════════════════ */
+function renderBookingsList(){
+  const panel=document.getElementById('bookingsListPanel');
+  if(!panel||panel.style.display==='none') return;
+  const tbody=document.getElementById('bookingsTbody');
+  if(!tbody) return;
+  const sorted=[...bookings].sort((a,b)=>a.checkin<b.checkin?1:-1);
+  tbody.innerHTML=sorted.map(b=>{
+    const apt=apartments.find(a=>a.id===b.apartmentId);
+    const st=STATUS_MAP[b.status]||STATUS_MAP['option'];
+    const n=nightsBetween(b.checkin,b.checkout);
+    const comm=getCommissionAmount(b);
+    const src=SOURCE_MAP[b.source||'direct'];
+    return `<tr>
+      <td><span style="background:${st.color};color:#fff;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap;">${st.label}</span></td>
+      <td>${escapeHtml(apt?apt.name:'?')}</td>
+      <td style="cursor:pointer;color:var(--accent-dark);font-weight:600;" onclick="openBookingDetail('${b.id}')">${escapeHtml(b.client||'')}</td>
+      <td>${b.phone?`<a href="tel:${escapeHtml(b.phone.replace(/\s+/g,''))}" class="tel-link">${escapeHtml(b.phone)}</a>`:'&mdash;'}</td>
+      <td>${fmtDateShort(b.checkin)}</td>
+      <td>${fmtDateShort(b.checkout)}</td>
+      <td class="mono">${n}</td>
+      <td class="mono">${b.adults||0}</td>
+      <td class="mono">${b.children||0}</td>
+      <td class="mono">${b.babies||0}</td>
+      <td class="mono">${maskEuro(b.total||0)}</td>
+      <td class="mono">${maskEuro(comm)}</td>
+      <td>${escapeHtml(src?src.label:'?')}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(b.notes||'')}</td>
+      <td>
+        <button class="btn small" onclick="openBookingDetail('${b.id}')">Voir</button>
+        <button class="btn small danger" data-act="delete" onclick="deleteBooking('${b.id}')">&#128465;</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   DETAIL RESERVATION
+   ═══════════════════════════════════════════════════════ */
+function openBookingDetail(id){
+  detailBookingId=id;
+  const b=bookings.find(x=>x.id===id);
+  if(!b) return;
+  const apt=apartments.find(a=>a.id===b.apartmentId)||{};
+  const st=STATUS_MAP[b.status]||STATUS_MAP['option'];
+  const src=SOURCE_MAP[b.source||'direct'];
+  const n=nightsBetween(b.checkin,b.checkout);
+  const comm=getCommissionAmount(b);
+  const svcs=getServicesTotal(b);
+  document.getElementById('detailTitle').textContent=b.client||'Detail';
+  let html=`
+    <div class="detail-row"><span class="k">Statut</span><span class="v" style="color:${st.color};font-weight:700;">${st.label}</span></div>
+    <div class="detail-row"><span class="k">Logement</span><span class="v">${escapeHtml(apt.name||'?')}</span></div>
+    <div class="detail-row"><span class="k">Client</span><span class="v">${escapeHtml(b.client||'?')}</span></div>
+    <div class="detail-row"><span class="k">Téléphone</span><span class="v">${b.phone?`<a href="tel:${escapeHtml(b.phone.replace(/\s+/g,''))}" class="tel-link">${escapeHtml(b.phone)}</a>`:'&mdash;'}</span></div>
+    <div class="detail-row"><span class="k">Arrivée</span><span class="v">${fmtDateShort(b.checkin)}${b.checkinTime?' à '+b.checkinTime:''}</span></div>
+    <div class="detail-row"><span class="k">Départ</span><span class="v">${fmtDateShort(b.checkout)}${b.checkoutTime?' à '+b.checkoutTime:''}</span></div>
+    <div class="detail-row"><span class="k">Nuits</span><span class="v">${n}</span></div>
+    <div class="detail-row"><span class="k">Voyageurs</span><span class="v">${b.adults||0} adulte${(b.adults||0)>1?'s':''}${b.children?', '+b.children+' enfant'+(b.children>1?'s':''):''}${b.babies?', '+b.babies+' bébé'+(b.babies>1?'s':''):''}</span></div>
+    <div class="detail-row"><span class="k">Source</span><span class="v">${escapeHtml(src?src.label:'?')}</span></div>
+    <div class="detail-row"><span class="k">Total</span><span class="v">${maskEuro(b.total||0)}</span></div>
+    <div class="detail-row"><span class="k">Commission</span><span class="v">${maskEuro(comm)}</span></div>
+  `;
+  if(svcs>0) html+=`<div class="detail-row"><span class="k">Services</span><span class="v">${maskEuro(svcs)}</span></div>`;
+  if(b.flightNumber) html+=`<div class="detail-row"><span class="k">Vol</span><span class="v">&#9992;&#65039; ${escapeHtml(b.flightNumber)}${b.flightTime?' &mdash; '+b.flightTime:''}</span></div>`;
+  if(b.notes) html+=`<div class="detail-row"><span class="k">Notes</span><span class="v">${escapeHtml(b.notes)}</span></div>`;
+  if(b.history&&b.history.length){
+    html+=`<div style="margin-top:12px;"><div style="font-size:12px;font-weight:700;color:var(--ink-faint);margin-bottom:6px;">Historique</div>`;
+    b.history.forEach(h=>html+=`<div class="history-item">${escapeHtml(h.date)} &mdash; ${escapeHtml(h.from)} &rarr; ${escapeHtml(h.to)}</div>`);
+    html+='</div>';
+  }
+  if(b.invoice){
+    html+=`<div style="margin-top:12px;"><button class="btn primary small" onclick="printTenantInvoice('${b.id}')">&#129534; Générer la facture locataire</button></div>`;
+  }
+  document.getElementById('detailContent').innerHTML=html;
+  openModal('detailBackdrop');
+}
+function closeDetailModal(){ document.getElementById('detailBackdrop').hidden=true; }
+
+/* ═══════════════════════════════════════════════════════
+   FORMULAIRE RESERVATION
+   ═══════════════════════════════════════════════════════ */
+function renderStatusOptions(){
+  const wrap=document.getElementById('statusSelectWrap');
+  if(!wrap) return;
+  wrap.innerHTML=STATUSES.map(s=>`
+    <div class="status-opt${selectedStatus===s.key?' selected':''}" data-status="${s.key}">
+      <span class="status-dot" style="background:${s.color};"></span>${escapeHtml(s.label)}
+    </div>`).join('');
+  wrap.querySelectorAll('.status-opt').forEach(opt=>opt.addEventListener('click',()=>{
+    selectedStatus=opt.getAttribute('data-status');
+    renderStatusOptions();
+  }));
+}
+
+function renderSourceOptions(){
+  const wrap=document.getElementById('sourceSelectWrap');
+  if(!wrap) return;
+  wrap.innerHTML=SOURCES.map(s=>`
+    <div class="source-opt${selectedSource===s.key?' selected':''}" data-source="${s.key}">
+      <span class="status-dot" style="background:${s.color};"></span>${escapeHtml(s.label)}
+    </div>`).join('');
+  wrap.querySelectorAll('.source-opt').forEach(opt=>opt.addEventListener('click',()=>{
+    selectedSource=opt.getAttribute('data-source');
+    renderSourceOptions();
+  }));
+}
+
+function renderServicesRows(){
+  const list=document.getElementById('servicesList');
+  if(!list) return;
+  list.innerHTML=currentServices.map((s,i)=>`
+    <div class="service-row">
+      <input type="text" data-role="label" data-idx="${i}" value="${escapeHtml(s.label||'')}" placeholder="Description du service" class="field" style="flex:1;border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;">
+      <input type="number" data-role="price" data-idx="${i}" value="${s.price!=null?s.price:''}" placeholder="0.00" min="0" step="0.01" inputmode="decimal" style="width:90px;border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;">
+      <button type="button" onclick="removeServiceRow(${i})">&#10005;</button>
+    </div>`).join('');
+  list.querySelectorAll('[data-role=label]').forEach(el=>el.addEventListener('input',()=>{ currentServices[+el.dataset.idx].label=el.value; updateServicesHint(); }));
+  list.querySelectorAll('[data-role=price]').forEach(el=>el.addEventListener('input',()=>{ currentServices[+el.dataset.idx].price=el.value===''?null:parseFloat(el.value); updateServicesHint(); }));
+  updateServicesHint();
+}
+
+function removeServiceRow(i){ currentServices.splice(i,1); renderServicesRows(); }
+
+function updateServicesHint(){
+  const total=currentServices.reduce((s,sv)=>s+(sv.price>0?sv.price:0),0);
+  const hint=document.getElementById('servicesHint');
+  if(hint) hint.textContent=currentServices.length>0?`Total services : ${fmtEuro(total)}`:'';
+}
+
+function updateNightsBadge(){
+  const ci=frToISO(document.getElementById('bkCheckin').value);
+  const co=frToISO(document.getElementById('bkCheckout').value);
+  const badge=document.getElementById('nightsBadge');
+  if(ci&&co&&co>ci){ const n=nightsBetween(ci,co); badge.textContent=`${n} nuit${n>1?'s':''}`; }
+  else badge.textContent='— nuits';
+}
+
+function updateBabyReminder(){
+  const babies=parseInt(document.getElementById('bkBabies').value)||0;
+  document.getElementById('babyReminder').style.display=babies>0?'flex':'none';
+}
+
+function openNewBookingBlank(){
+  currentEditId=null;
+  document.getElementById('bookingModalTitle').textContent='Nouvelle réservation';
+  const apt=apartments[0];
+  document.getElementById('bkCheckin').value='';
+  document.getElementById('bkCheckout').value='';
+  document.getElementById('bkCheckinTime').value='';
+  document.getElementById('bkCheckoutTime').value='';
+  document.getElementById('bkClient').value='';
+  document.getElementById('bkPhone').value='';
+  document.getElementById('bkAdults').value='2';
+  document.getElementById('bkChildren').value='0';
+  document.getElementById('bkBabies').value='0';
+  document.getElementById('bkPricePerNight').value='';
+  document.getElementById('bkTotal').value='';
+  document.getElementById('bkCommission').value=apt?apt.commissionPercent||20:20;
+  document.getElementById('bkNotes').value='';
+  document.getElementById('bkTrackTimes').checked=false;
+  document.getElementById('timesFields').style.display='none';
+  document.getElementById('bkTrackFlight').checked=false;
+  document.getElementById('flightFields').style.display='none';
+  document.getElementById('flightStatus').style.display='none';
+  document.getElementById('bkFlightNumber').value='';
+  document.getElementById('bkFlightTime').value='';
+  document.getElementById('bkTrackDeposit').checked=false;
+  document.getElementById('depositFields').style.display='none';
+  document.getElementById('bkDepositAmount').value='';
+  document.getElementById('bkInvoice').checked=false;
+  document.getElementById('invoiceFields').style.display='none';
+  document.getElementById('bkTenantAddress').value='';
+  document.getElementById('babyReminder').style.display='none';
+  document.getElementById('nightsBadge').textContent='— nuits';
+  selectedStatus='option'; selectedSource='direct';
+  currentServices=[];
+  renderStatusOptions(); renderSourceOptions(); renderServicesRows();
+  openModal('modalBackdrop');
+}
+
+function openNewBookingForCell(aptId, dateISO){
+  openNewBookingBlank();
+  const apt=apartments.find(a=>a.id===aptId);
+  if(apt) document.getElementById('bkCommission').value=apt.commissionPercent||20;
+  document.getElementById('bkCheckin').value=isoToFR(dateISO);
+  document.getElementById('bkCheckout').value=isoToFR(addDaysISO(dateISO,1));
+  updateNightsBadge();
+}
+
+function openEditBooking(id){
+  const b=bookings.find(x=>x.id===id);
+  if(!b) return;
+  currentEditId=id;
+  document.getElementById('bookingModalTitle').textContent='Modifier la réservation';
+  document.getElementById('bkCheckin').value=isoToFR(b.checkin);
+  document.getElementById('bkCheckout').value=isoToFR(b.checkout);
+  document.getElementById('bkCheckinTime').value=b.checkinTime||'';
+  document.getElementById('bkCheckoutTime').value=b.checkoutTime||'';
+  document.getElementById('bkClient').value=b.client||'';
+  document.getElementById('bkPhone').value=b.phone||'';
+  document.getElementById('bkAdults').value=b.adults||0;
+  document.getElementById('bkChildren').value=b.children||0;
+  document.getElementById('bkBabies').value=b.babies||0;
+  document.getElementById('bkPricePerNight').value=b.pricePerNight||'';
+  document.getElementById('bkTotal').value=b.total||'';
+  document.getElementById('bkCommission').value=b.commissionPercent!=null?b.commissionPercent:20;
+  document.getElementById('bkNotes').value=b.notes||'';
+  document.getElementById('bkTrackTimes').checked=!!(b.checkinTime||b.checkoutTime);
+  document.getElementById('timesFields').style.display=(b.checkinTime||b.checkoutTime)?'flex':'none';
+  document.getElementById('bkTrackFlight').checked=!!b.flightNumber;
+  document.getElementById('flightFields').style.display=b.flightNumber?'flex':'none';
+  document.getElementById('bkFlightNumber').value=b.flightNumber||'';
+  document.getElementById('bkFlightTime').value=b.flightTime||'';
+  document.getElementById('flightStatus').style.display='none';
+  document.getElementById('bkTrackDeposit').checked=!!b.trackDeposit;
+  document.getElementById('depositFields').style.display=b.trackDeposit?'flex':'none';
+  document.getElementById('bkDepositAmount').value=b.depositAmount||'';
+  document.getElementById('bkInvoice').checked=!!b.invoice;
+  document.getElementById('invoiceFields').style.display=b.invoice?'':'none';
+  document.getElementById('bkTenantAddress').value=b.tenantAddress||'';
+  selectedStatus=b.status||'option';
+  selectedSource=b.source||'direct';
+  currentServices=[...(b.services||[])];
+  renderStatusOptions(); renderSourceOptions(); renderServicesRows();
+  updateNightsBadge(); updateBabyReminder();
+  openModal('modalBackdrop');
+}
+
+function closeBookingModal(){ document.getElementById('modalBackdrop').hidden=true; }
+
+async function saveBooking(){
+  const ci=frToISO(document.getElementById('bkCheckin').value);
+  const co=frToISO(document.getElementById('bkCheckout').value);
+  const client=document.getElementById('bkClient').value.trim();
+  if(!ci||!co||!client){ alert('Remplis les champs obligatoires (dates + client).'); return; }
+  if(co<=ci){ alert("La date de départ doit être après l'arrivée."); return; }
+  if(!apartments.length){ alert("Cr\u00e9e d'abord un logement."); return; }
+  const total=parseFloat(document.getElementById('bkTotal').value)||0;
+  const commPct=parseFloat(document.getElementById('bkCommission').value)||0;
+  const commAmt=Math.round(total*commPct/100*100)/100;
+  const data={
+    apartmentId: apartments[0].id,
+    client, phone: document.getElementById('bkPhone').value.trim(),
+    checkin:ci, checkout:co,
+    checkinTime: document.getElementById('bkCheckinTime').value||'',
+    checkoutTime: document.getElementById('bkCheckoutTime').value||'',
+    adults: parseInt(document.getElementById('bkAdults').value)||0,
+    children: parseInt(document.getElementById('bkChildren').value)||0,
+    babies: parseInt(document.getElementById('bkBabies').value)||0,
+    pricePerNight: parseFloat(document.getElementById('bkPricePerNight').value)||null,
+    total, commissionPercent:commPct, commissionAmount:commAmt,
+    status:selectedStatus, source:selectedSource,
+    flightNumber: document.getElementById('bkFlightNumber').value.trim().toUpperCase()||'',
+    flightTime: document.getElementById('bkFlightTime').value||'',
+    trackDeposit: document.getElementById('bkTrackDeposit').checked,
+    depositAmount: parseFloat(document.getElementById('bkDepositAmount').value)||null,
+    invoice: document.getElementById('bkInvoice').checked,
+    tenantAddress: document.getElementById('bkTenantAddress').value.trim(),
+    services: currentServices.filter(s=>s.label.trim()!==''||(s.price!=null&&!isNaN(s.price))),
+    notes: document.getElementById('bkNotes').value.trim(),
+  };
+  if(currentEditId){
+    const idx=bookings.findIndex(x=>x.id===currentEditId);
+    if(idx!==-1){
+      const old=bookings[idx];
+      const hist=[...(old.history||[])];
+      if(old.status!==data.status) hist.push({date:todayISO(),from:old.status,to:data.status});
+      bookings[idx]={...old,...data,id:currentEditId,history:hist};
+    }
+  } else {
+    data.id=generateId();
+    data.history=[];
+    bookings.push(data);
+  }
+  await saveBookings();
+  closeBookingModal();
+  renderAll();
+}
+
+async function deleteBooking(id){
+  showConfirm('Supprimer cette réservation ?', async()=>{
+    bookings=bookings.filter(b=>b.id!==id);
+    await saveBookings();
+    renderAll();
+    if(!document.getElementById('detailBackdrop').hidden&&detailBookingId===id) closeDetailModal();
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   VOL (AERODATABOX)
+   ═══════════════════════════════════════════════════════ */
+function getFlightApiKey(){ try{return localStorage.getItem(LS_PREFIX+'flightApiKey')||'';}catch(e){return '';} }
+function saveFlightApiKey(k){ try{localStorage.setItem(LS_PREFIX+'flightApiKey',k);}catch(e){} }
+
+async function fetchFlightArrivalTime(flightNumber){
+  const apiKey=getFlightApiKey();
+  if(!apiKey) return {ok:false,reason:'no-key'};
+  try{
+    const res=await fetch(`https://aerodatabox.p.rapidapi.com/flights/number/${encodeURIComponent(flightNumber)}`,{
+      headers:{'X-RapidAPI-Key':apiKey,'X-RapidAPI-Host':'aerodatabox.p.rapidapi.com'}
+    });
+    if(!res.ok) return {ok:false,reason:'http-'+res.status};
+    const data=await res.json();
+    const flight=Array.isArray(data)?data[0]:data;
+    const arrival=flight&&flight.arrival;
+    const timeStr=arrival&&(arrival.revisedTime?.local||arrival.scheduledTime?.local);
+    if(!timeStr) return {ok:false,reason:'no-time'};
+    const match=timeStr.match(/(\d{2}):(\d{2})/);
+    if(!match) return {ok:false,reason:'bad-format'};
+    return {ok:true,time:`${match[1]}:${match[2]}`};
+  }catch(e){return {ok:false,reason:'network'};}
+}
+
+async function checkFlightStatus(){
+  const flightNumber=document.getElementById('bkFlightNumber').value.trim().toUpperCase();
+  const statusEl=document.getElementById('flightStatus');
+  statusEl.style.display='block';
+  if(!flightNumber){statusEl.textContent="Renseigne d'abord un numéro de vol.";return;}
+  if(!getFlightApiKey()){statusEl.textContent="Aucune clé de suivi de vol configurée — ouvre Synchro pour en ajouter une.";return;}
+  statusEl.textContent='Vérification automatique du vol en cours…';
+  const result=await fetchFlightArrivalTime(flightNumber);
+  if(!result.ok){
+    const msgs={'http-404':"Vol introuvable. Vérifie le numéro.",'no-time':"Heure non disponible.",'bad-format':"Format inattendu.",'network':"Service indisponible."};
+    statusEl.textContent=msgs[result.reason]||`Service indisponible (${result.reason}).`;
+    return;
+  }
+  document.getElementById('bkFlightTime').value=result.time;
+  statusEl.textContent=`✅ Heure mise à jour automatiquement (${result.time}).`;
+}
+
+async function autoUpdateFlightTimes(){
+  if(!getFlightApiKey()) return;
+  const todayI=todayISO();
+  const tomorrowI=addDaysISO(todayI,1);
+  const targets=bookings.filter(b=>(b.checkin===todayI||b.checkin===tomorrowI)&&b.flightNumber&&!['annulation','nemeconcerne'].includes(b.status));
+  let changed=false;
+  for(const b of targets){
+    const result=await fetchFlightArrivalTime(b.flightNumber);
+    if(result.ok&&result.time!==b.flightTime){ b.flightTime=result.time; changed=true; }
+  }
+  if(changed){ await saveBookings(); renderTodayPanel(); }
+}
+
+function startFlightAutoUpdate(){
+  if(flightAutoUpdateTimer) clearInterval(flightAutoUpdateTimer);
+  flightAutoUpdateTimer=setInterval(autoUpdateFlightTimes,300000);
+  autoUpdateFlightTimes();
+}
+
+/* ═══════════════════════════════════════════════════════
+   LOGEMENTS
+   ═══════════════════════════════════════════════════════ */
+function openApartmentsModal(){
+  renderApartmentsList();
+  openModal('apartmentsBackdrop');
+}
+function closeApartmentsModal(){ document.getElementById('apartmentsBackdrop').hidden=true; }
+
+function renderApartmentsList(){
+  const list=document.getElementById('apartmentsList');
+  if(!apartments.length){ list.innerHTML='<p style="color:var(--ink-faint);font-size:13px;">Aucun logement.</p>'; return; }
+  list.innerHTML='';
+  apartments.forEach((apt,i)=>{
+    const item=document.createElement('div');
+    item.className='apt-list-item';
+    item.setAttribute('data-apt-id',apt.id);
+    item.innerHTML=`
+      <div class="drag-handle" title="Glisser pour réordonner">&#10495;</div>
+      <div class="reorder-btns">
+        <button data-act="up" title="Monter" ${i===0?'disabled':''}>&#9650;</button>
+        <button data-act="down" title="Descendre" ${i===apartments.length-1?'disabled':''}>&#9660;</button>
+      </div>
+      <div class="info"><div class="n">${escapeHtml(apt.name)}</div><div class="o">${escapeHtml(apt.owner||'—')} &middot; ${apt.commissionPercent||20}%</div></div>
+      <button data-act="edit" title="Modifier">&#9998;</button>
+      <button data-act="delete" title="Supprimer" style="color:var(--st-annulation);">&#128465;</button>
+    `;
+    item.querySelector('[data-act=edit]').addEventListener('click',()=>startEditApartment(item,apt.id));
+    item.querySelector('[data-act=delete]').addEventListener('click',()=>deleteApartment(apt.id));
+    const upBtn=item.querySelector('[data-act=up]');
+    const downBtn=item.querySelector('[data-act=down]');
+    if(upBtn&&!upBtn.disabled) upBtn.addEventListener('click',()=>moveApartment(i,-1));
+    if(downBtn&&!downBtn.disabled) downBtn.addEventListener('click',()=>moveApartment(i,1));
+    item.querySelector('.drag-handle').addEventListener('pointerdown',e=>startDragApartment(e,apt.id));
+    list.appendChild(item);
+  });
+}
+
+function startDragApartment(e,aptId){
+  e.preventDefault();
+  const list=document.getElementById('apartmentsList');
+  const item=list.querySelector(`[data-apt-id="${aptId}"]`);
+  if(!item) return;
+  const items=[...list.querySelectorAll('.apt-list-item')];
+  dragState={aptId,startY:e.clientY,items,fromIndex:items.indexOf(item),targetIndex:items.indexOf(item)};
+  item.classList.add('dragging');
+  document.addEventListener('pointermove',onDragApartmentMove);
+  document.addEventListener('pointerup',onDragApartmentEnd);
+}
+function onDragApartmentMove(e){
+  if(!dragState) return;
+  const list=document.getElementById('apartmentsList');
+  const item=list.querySelector(`[data-apt-id="${dragState.aptId}"]`);
+  if(!item) return;
+  const dy=e.clientY-dragState.startY;
+  item.style.transform=`translateY(${dy}px)`;
+  item.style.zIndex='10';
+  item.style.position='relative';
+  let newIdx=dragState.fromIndex;
+  const itemCenter=item.getBoundingClientRect().top+item.getBoundingClientRect().height/2;
+  dragState.items.filter(el=>el!==item).forEach(other=>{
+    const r=other.getBoundingClientRect();
+    const oc=r.top+r.height/2, oi=dragState.items.indexOf(other);
+    if(itemCenter>oc&&oi>newIdx) newIdx=oi;
+    if(itemCenter<oc&&oi<newIdx) newIdx=oi;
+  });
+  dragState.targetIndex=newIdx;
+  const h=item.offsetHeight+1;
+  dragState.items.filter(el=>el!==item).forEach(other=>{
+    const oi=dragState.items.indexOf(other);
+    let shift=0;
+    if(dragState.fromIndex<newIdx&&oi>dragState.fromIndex&&oi<=newIdx) shift=-h;
+    if(dragState.fromIndex>newIdx&&oi<dragState.fromIndex&&oi>=newIdx) shift=h;
+    other.style.transform=shift?`translateY(${shift}px)`:'';
+    other.style.transition='transform 0.15s ease';
+  });
+}
+function onDragApartmentEnd(){
+  if(!dragState) return;
+  dragState.items.forEach(el=>{el.style.transform='';el.style.transition='';el.style.zIndex='';el.style.position='';el.classList.remove('dragging');});
+  document.removeEventListener('pointermove',onDragApartmentMove);
+  document.removeEventListener('pointerup',onDragApartmentEnd);
+  const from=dragState.fromIndex, to=dragState.targetIndex;
+  dragState=null;
+  if(to!=null&&to!==from){
+    const moved=apartments.splice(from,1)[0];
+    apartments.splice(to,0,moved);
+    saveApartments(); renderApartmentsList(); renderAll();
+  }
+}
+function moveApartment(index,dir){
+  const ni=index+dir;
+  if(ni<0||ni>=apartments.length) return;
+  [apartments[index],apartments[ni]]=[apartments[ni],apartments[index]];
+  saveApartments(); renderApartmentsList(); renderAll();
+}
+
+function startEditApartment(item, aptId){
+  const apt=apartments.find(a=>a.id===aptId);
+  if(!apt) return;
+  item.innerHTML=`<div class="apt-edit-form" style="flex:1;">
+    <div class="field-row">
+      <div class="field"><label>Nom</label><input type="text" id="editAptName" value="${escapeHtml(apt.name)}" style="width:100%;border:1.5px solid var(--line);border-radius:8px;padding:8px;"></div>
+      <div class="field"><label>Commission (%)</label><input type="number" id="editAptComm" value="${apt.commissionPercent||20}" style="width:100%;border:1.5px solid var(--line);border-radius:8px;padding:8px;"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn primary small" id="saveAptEditBtn">Enregistrer</button>
+      <button class="btn small" id="cancelAptEditBtn">Annuler</button>
+    </div>
+  </div>`;
+  document.getElementById('saveAptEditBtn').addEventListener('click',async()=>{
+    apt.name=document.getElementById('editAptName').value.trim()||apt.name;
+    apt.commissionPercent=parseFloat(document.getElementById('editAptComm').value)||20;
+    await saveApartments(); renderApartmentsList(); renderAll();
+  });
+  document.getElementById('cancelAptEditBtn').addEventListener('click',()=>renderApartmentsList());
+}
+
+async function deleteApartment(id){
+  showConfirm('Supprimer ce logement et toutes ses données ?', async()=>{
+    apartments=apartments.filter(a=>a.id!==id);
+    bookings=bookings.filter(b=>b.apartmentId!==id);
+    await Promise.all([saveApartments(),saveBookings()]);
+    renderApartmentsList(); renderAll();
+  });
+}
+
+async function addApartment(){
+  const name=document.getElementById('newAptName').value.trim();
+  if(!name){document.getElementById('aptFormError').style.display='block';document.getElementById('aptFormError').textContent='Le nom est obligatoire.';return;}
+  document.getElementById('aptFormError').style.display='none';
+  const apt={
+    id:generateId(), name,
+    propertyType:document.getElementById('newAptType').value,
+    propertyAddress:document.getElementById('newAptPropertyAddress').value.trim(),
+    owner:document.getElementById('newAptOwner').value.trim(),
+    commissionPercent:parseFloat(document.getElementById('newAptCommission').value)||20,
+    ownerPhone:document.getElementById('newAptOwnerPhone').value.trim(),
+    ownerEmail:document.getElementById('newAptOwnerEmail').value.trim(),
+    ownerAddress:document.getElementById('newAptOwnerAddress').value.trim(),
+    advances:[], globalServices:[], comment:''
+  };
+  apartments.push(apt);
+  await saveApartments();
+  // Reset form
+  ['newAptName','newAptPropertyAddress','newAptOwner','newAptOwnerPhone','newAptOwnerEmail','newAptOwnerAddress'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('newAptType').value='';
+  document.getElementById('newAptCommission').value='20';
+  renderApartmentsList(); renderAll(); renderLegend();
+}
+
+/* ═══════════════════════════════════════════════════════
+   STATISTIQUES LOGEMENT
+   ═══════════════════════════════════════════════════════ */
+function openApartmentStatsModal(aptId){
+  statsApartmentId=aptId;
+  statsYear=currentYear||new Date().getFullYear();
+  const apt=apartments.find(a=>a.id===aptId)||{};
+  document.getElementById('statsTitle').textContent='Stats — '+escapeHtml(apt.name||'');
+  renderApartmentStats();
+  openModal('statsBackdrop');
+}
+
+function renderApartmentStats(){
+  const apt=apartments.find(a=>a.id===statsApartmentId);
+  if(!apt) return;
+  const content=document.getElementById('statsContent');
+
+  // Onglets
+  const tabs=['stats','advances','servicesglobal','comment'];
+  if(!tabs.includes(activeTab)) activeTab='stats';
+
+  let html='';
+  if(activeTab==='stats'){
+    // Stats annuelles par mois
+    let totalN=0, totalR=0, totalC=0, totalS=0;
+    const monthly=[];
+    for(let m=0;m<12;m++){
+      const mISO=toISO(statsYear,m,1);
+      const mEnd=addDaysISO(mISO,daysInMonth(statsYear,m));
+      const mBk=bookings.filter(b=>b.apartmentId===apt.id&&['arrhes','paye'].includes(b.status)&&b.checkin>=mISO&&b.checkin<mEnd);
+      const nights=mBk.reduce((s,b)=>s+nightsBetween(b.checkin,b.checkout),0);
+      const rev=mBk.reduce((s,b)=>s+(b.total||0),0);
+      const comm=mBk.reduce((s,b)=>s+getCommissionAmount(b),0);
+      const svcs=mBk.reduce((s,b)=>s+getServicesTotal(b),0)+getGlobalServicesTotal(apt,mISO,mEnd);
+      totalN+=nights; totalR+=rev; totalC+=comm; totalS+=svcs;
+      monthly.push({m,nights,revenue:rev,fees:comm,services:svcs,total:comm+svcs});
+    }
+    html+=`<div class="stats-grid">
+      <div class="card"><div class="label">Nuitées ${statsYear}</div><div class="value">${maskNum(totalN)}</div></div>
+      <div class="card"><div class="label">Revenu brut</div><div class="value">${maskEuro(Math.round(totalR))}</div></div>
+      <div class="card" style="border-color:var(--accent);"><div class="label">Commission</div><div class="value" style="color:var(--accent);">${maskEuro(Math.round(totalC*100)/100)}</div></div>
+      <div class="card"><div class="label">Services</div><div class="value">${maskEuro(Math.round(totalS*100)/100)}</div></div>
+    </div>`;
+    html+=`<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+      <button class="btn small" id="statsPrevYear">&lsaquo;</button>
+      <span style="font-weight:700;">${statsYear}</span>
+      <button class="btn small" id="statsNextYear">&rsaquo;</button>
+    </div>`;
+    html+=`<table style="width:100%;font-size:12.5px;"><thead><tr><th style="text-align:left;padding:4px 6px;">Mois</th><th style="text-align:right;padding:4px 6px;">Nuits</th><th style="text-align:right;padding:4px 6px;">Revenu</th><th style="text-align:right;padding:4px 6px;">Comm.</th><th style="text-align:right;padding:4px 6px;">Total gagné</th></tr></thead><tbody>`;
+    monthly.forEach(mo=>{
+      if(mo.nights===0&&mo.revenue===0) return;
+      html+=`<tr><td style="padding:4px 6px;">${MONTH_NAMES[mo.m].charAt(0).toUpperCase()+MONTH_NAMES[mo.m].slice(1)}</td><td class="mono" style="text-align:right;padding:4px 6px;">${mo.nights}</td><td class="mono" style="text-align:right;padding:4px 6px;">${maskEuro(Math.round(mo.revenue))}</td><td class="mono" style="text-align:right;padding:4px 6px;">${maskEuro(Math.round(mo.fees*100)/100)}</td><td class="mono" style="text-align:right;padding:4px 6px;font-weight:700;">${maskEuro(Math.round(mo.total*100)/100)}</td></tr>`;
+    });
+    html+=`</tbody></table>`;
+    html+=`<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+      <button class="btn" id="ownerTaxRecapBtn" style="flex:1;">&#128202; Récap annuel proprio</button>
+      <button class="btn primary" id="ownerMonthlyInvoiceBtn" style="flex:1;">&#129534; Facture mensuelle</button>
+    </div>`;
+  }
+
+  if(activeTab==='advances'){
+    const advances=apt.advances||[];
+    const totalDue=advances.filter(a=>!a.reimbursed).reduce((s,a)=>s+(a.amount||0),0);
+    html+=`<p style="font-size:13px;color:var(--ink-soft);">Avances engagées pour ce logement (montants à te faire rembourser).</p>`;
+    if(advances.length){
+      html+=`<div style="margin-bottom:12px;font-size:13px;font-weight:700;color:var(--accent-dark);">Total à rembourser : ${maskEuro(totalDue)}</div>`;
+      html+=`<div id="advancesList">`;
+      advances.forEach((a,i)=>{
+        html+=`<div class="advance-row">
+          <div class="adv-info">
+            <div style="font-weight:600;">${escapeHtml(a.description||'(sans description)')}</div>
+            <div style="font-size:11.5px;color:var(--ink-faint);">${fmtDateShort(a.date)}</div>
+          </div>
+          <span class="adv-amount">${fmtEuro(a.amount||0)}</span>
+          ${a.reimbursed?`<span class="adv-reimb">✅ Remboursé ${fmtDateShort(a.reimbursedDate)}</span>`:`<span class="adv-pending">⏳ En attente</span>`}
+          ${!a.reimbursed?`<button data-act="reimburse" data-idx="${i}">Remboursé</button>`:''}
+          <button onclick="printAdvanceInvoice('${apt.id}','${a.id}')">&#129534;</button>
+          <button data-act="deladv" data-idx="${i}" style="color:var(--st-annulation);">&#10005;</button>
+        </div>`;
+      });
+      html+=`</div>`;
+    } else html+=`<p style="font-size:13px;color:var(--ink-faint);">Aucune avance enregistrée.</p>`;
+    html+=`<hr class="divider"><div class="field-row">
+      <div class="field" style="max-width:110px;"><label>Date</label>
+        <div class="date-input-wrap">
+          <input type="text" id="newAdvanceDate" placeholder="jj/mm/aaaa" inputmode="numeric" maxlength="10" autocomplete="off">
+          <button type="button" class="date-picker-btn" data-target="newAdvanceDate">&#128197;</button>
+          <div class="mini-calendar" id="miniCal_newAdvanceDate" hidden></div>
+        </div>
+      </div>
+      <div class="field" style="max-width:110px;"><label>Montant (&euro;)</label><input type="number" id="newAdvanceAmount" min="0" step="0.01" inputmode="decimal"></div>
+      <div class="field"><label>Description</label><input type="text" id="newAdvanceDesc" placeholder="ex : Plombier, ampoules…"></div>
+    </div>
+    <button class="btn primary" id="addAdvanceBtn" style="width:100%;">+ Ajouter une avance</button>
+    <div id="advancesTotal" style="font-size:12px;color:var(--ink-faint);margin-top:8px;"></div>`;
+  }
+
+  if(activeTab==='servicesglobal'){
+    const svcs=apt.globalServices||[];
+    const total=svcs.reduce((s,sv)=>s+(sv.price||0),0);
+    html+=`<p style="font-size:13px;color:var(--ink-soft);">Services facturés au propriétaire (indépendants d'une réservation).</p>`;
+    if(svcs.length){
+      html+=`<div style="margin-bottom:12px;font-size:13px;font-weight:700;">Total : ${maskEuro(total)}</div>`;
+      html+=`<div id="servicesGlobalList">`;
+      svcs.forEach((s,i)=>{
+        html+=`<div class="advance-row">
+          <div class="adv-info"><div style="font-weight:600;">${escapeHtml(s.label||'(service)')}</div><div style="font-size:11.5px;color:var(--ink-faint);">${fmtDateShort(s.date)}</div></div>
+          <span class="adv-amount">${fmtEuro(s.price||0)}</span>
+          <button data-act="delsvc" data-idx="${i}" style="color:var(--st-annulation);">&#10005;</button>
+        </div>`;
+      });
+      html+=`</div>`;
+      html+=`<div id="servicesGlobalTotal" style="font-size:12px;color:var(--ink-faint);margin-top:4px;">Total : ${fmtEuro(total)}</div>`;
+    } else html+=`<p style="font-size:13px;color:var(--ink-faint);">Aucun service enregistré.</p>`;
+    html+=`<hr class="divider"><div class="field-row">
+      <div class="field" style="max-width:110px;"><label>Date</label>
+        <div class="date-input-wrap">
+          <input type="text" id="newGlobalServiceDate" placeholder="jj/mm/aaaa" inputmode="numeric" maxlength="10" autocomplete="off">
+          <button type="button" class="date-picker-btn" data-target="newGlobalServiceDate">&#128197;</button>
+          <div class="mini-calendar" id="miniCal_newGlobalServiceDate" hidden></div>
+        </div>
+      </div>
+      <div class="field" style="max-width:110px;"><label>Tarif (&euro;)</label><input type="number" id="newGlobalServiceAmount" min="0" step="0.01" inputmode="decimal"></div>
+      <div class="field"><label>Description</label><input type="text" id="newGlobalServiceDesc" placeholder="ex : Entretien jardin"></div>
+    </div>
+    <button class="btn primary" id="addGlobalServiceBtn" style="width:100%;">+ Ajouter un service</button>`;
+  }
+
+  if(activeTab==='comment'){
+    html+=`<div class="field"><label>Commentaire (privé)</label><textarea id="aptComment" rows="4" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 14px;font-size:14px;">${escapeHtml(apt.comment||'')}</textarea></div>
+    <button class="btn primary" id="saveCommentBtn" style="width:100%;">Enregistrer</button>`;
+  }
+
+  content.innerHTML=html;
+
+  // Onglets actifs
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active',btn.getAttribute('data-tab')===activeTab));
+
+  // Listeners dynamiques
+  if(activeTab==='stats'){
+    document.getElementById('statsPrevYear')?.addEventListener('click',()=>{statsYear--;renderApartmentStats();});
+    document.getElementById('statsNextYear')?.addEventListener('click',()=>{statsYear++;renderApartmentStats();});
+    document.getElementById('ownerTaxRecapBtn')?.addEventListener('click',()=>{
+      const a=apartments.find(x=>x.id===statsApartmentId);
+      if(a) openPrintDocument(buildOwnerTaxRecapHtml(a,statsYear));
+    });
+    document.getElementById('ownerMonthlyInvoiceBtn')?.addEventListener('click',()=>{
+      const a=apartments.find(x=>x.id===statsApartmentId);
+      if(a) openPrintDocument(buildOwnerMonthlyInvoiceHtml(a,statsYear,new Date().getMonth()));
+    });
+  }
+  if(activeTab==='advances'){
+    attachDateMask(document.getElementById('newAdvanceDate'));
+    document.getElementById('addAdvanceBtn')?.addEventListener('click',addAdvance);
+    content.querySelectorAll('[data-act=reimburse]').forEach(btn=>btn.addEventListener('click',async()=>{
+      const i=+btn.dataset.idx;
+      apt.advances[i].reimbursed=true;
+      apt.advances[i].reimbursedDate=todayISO();
+      await saveApartments(); renderApartmentStats();
+    }));
+    content.querySelectorAll('[data-act=deladv]').forEach(btn=>btn.addEventListener('click',async()=>{
+      apt.advances.splice(+btn.dataset.idx,1);
+      await saveApartments(); renderApartmentStats();
+    }));
+    document.addEventListener('click',(e)=>{
+      const b=e.target.closest('.date-picker-btn[data-target]');
+      if(!b) return;
+      const tid=b.getAttribute('data-target');
+      if(tid==='newAdvanceDate'||tid==='newGlobalServiceDate') toggleMiniCalendar(tid);
+    });
+  }
+  if(activeTab==='servicesglobal'){
+    attachDateMask(document.getElementById('newGlobalServiceDate'));
+    document.getElementById('addGlobalServiceBtn')?.addEventListener('click',addGlobalService);
+    content.querySelectorAll('[data-act=delsvc]').forEach(btn=>btn.addEventListener('click',async()=>{
+      apt.globalServices.splice(+btn.dataset.idx,1);
+      await saveApartments(); renderApartmentStats();
+    }));
+  }
+  if(activeTab==='comment'){
+    document.getElementById('saveCommentBtn')?.addEventListener('click',async()=>{
+      apt.comment=document.getElementById('aptComment').value;
+      await saveApartments();
+    });
+  }
+}
+
+function closeStatsModal(){ document.getElementById('statsBackdrop').hidden=true; }
+
+async function addAdvance(){
+  const apt=apartments.find(a=>a.id===statsApartmentId);
+  if(!apt) return;
+  const date=frToISO(document.getElementById('newAdvanceDate').value)||todayISO();
+  const amount=parseFloat(document.getElementById('newAdvanceAmount').value)||0;
+  const description=document.getElementById('newAdvanceDesc').value.trim();
+  if(!amount){ alert('Saisis un montant.'); return; }
+  if(!apt.advances) apt.advances=[];
+  apt.advances.push({id:generateId(),date,amount,description,reimbursed:false,reimbursedDate:''});
+  await saveApartments();
+  document.getElementById('newAdvanceDate').value='';
+  document.getElementById('newAdvanceAmount').value='';
+  document.getElementById('newAdvanceDesc').value='';
+  renderApartmentStats();
+}
+
+async function addGlobalService(){
+  const apt=apartments.find(a=>a.id===statsApartmentId);
+  if(!apt) return;
+  const date=frToISO(document.getElementById('newGlobalServiceDate').value)||todayISO();
+  const price=parseFloat(document.getElementById('newGlobalServiceAmount').value)||0;
+  const label=document.getElementById('newGlobalServiceDesc').value.trim();
+  if(!price){ alert('Saisis un montant.'); return; }
+  if(!apt.globalServices) apt.globalServices=[];
+  apt.globalServices.push({id:generateId(),date,price,label});
+  await saveApartments();
+  document.getElementById('newGlobalServiceDate').value='';
+  document.getElementById('newGlobalServiceAmount').value='';
+  document.getElementById('newGlobalServiceDesc').value='';
+  renderApartmentStats();
+}
+
+/* ═══════════════════════════════════════════════════════
+   RECAP ANNUEL
+   ═══════════════════════════════════════════════════════ */
+function openAnnualRecap(){ renderAnnualRecap(); openModal('annualBackdrop'); }
+function closeAnnualRecap(){ document.getElementById('annualBackdrop').hidden=true; }
+
+function renderAnnualRecap(){
+  document.getElementById('annualYearLabel').textContent='Récap '+annualYear;
+  const content=document.getElementById('annualContent');
+  const byApt={};
+  apartments.forEach(apt=>byApt[apt.id]={name:apt.name,commission:0,services:0,nights:0,revenue:0});
+  const yearStart=toISO(annualYear,0,1);
+  const yearEnd=toISO(annualYear+1,0,1);
+  let totalComm=0, totalSvcs=0, totalNights=0;
+  bookings.forEach(b=>{
+    if(!byApt[b.apartmentId]) return;
+    if(b.checkin>=yearStart&&b.checkin<yearEnd&&['arrhes','paye'].includes(b.status)){
+      byApt[b.apartmentId].nights+=nightsBetween(b.checkin,b.checkout);
+      byApt[b.apartmentId].revenue+=(b.total||0);
+      byApt[b.apartmentId].commission+=getCommissionAmount(b);
+      byApt[b.apartmentId].services+=getServicesTotal(b);
+    }
+  });
+  apartments.forEach(apt=>{
+    if(!byApt[apt.id]) return;
+    byApt[apt.id].services+=getGlobalServicesTotal(apt,yearStart,yearEnd);
+    totalComm+=byApt[apt.id].commission;
+    totalSvcs+=byApt[apt.id].services;
+    totalNights+=byApt[apt.id].nights;
+  });
+  const rows=Object.values(byApt);
+  content.innerHTML=`
+    <div class="stats-grid" style="margin-bottom:16px;">
+      <div class="card"><div class="label">Nuitées ${annualYear}</div><div class="value">${maskNum(totalNights)}</div></div>
+      <div class="card" style="border-color:var(--accent);background:var(--accent-soft);"><div class="label">Total gagné ${annualYear}</div><div class="value" style="color:var(--accent-dark);font-size:22px;">${maskEuro(Math.round((totalComm+totalSvcs)*100)/100)}</div></div>
+    </div>
+    <table style="width:100%;font-size:12.5px;margin-bottom:16px;">
+      <thead><tr><th style="text-align:left;padding:4px 6px;">Logement</th><th style="text-align:right;padding:4px 6px;">Nuits</th><th style="text-align:right;padding:4px 6px;">Revenu</th><th style="text-align:right;padding:4px 6px;">Commission</th><th style="text-align:right;padding:4px 6px;">Services</th><th style="text-align:right;padding:4px 6px;font-weight:700;">Total gagné</th></tr></thead>
+      <tbody>${rows.map(a=>`<tr><td style="padding:4px 6px;">${escapeHtml(a.name)}</td><td class="mono" style="text-align:right;padding:4px 6px;">${maskNum(a.nights)}</td><td class="mono" style="text-align:right;padding:4px 6px;">${maskEuro(Math.round(a.revenue))}</td><td class="mono" style="text-align:right;padding:4px 6px;">${maskEuro(Math.round(a.commission*100)/100)}</td><td class="mono" style="text-align:right;padding:4px 6px;">${maskEuro(Math.round(a.services*100)/100)}</td><td class="mono" style="text-align:right;padding:4px 6px;font-weight:700;">${maskEuro(Math.round((a.commission+a.services)*100)/100)}</td></tr>`).join('')}</tbody>
+    </table>
+    <button class="btn primary" id="selfFiscalRecapBtn" style="width:100%;">&#128202; Récap fiscal pour moi</button>
+  `;
+  document.getElementById('selfFiscalRecapBtn')?.addEventListener('click',()=>openPrintDocument(buildSelfFiscalRecapHtml(annualYear)));
+}
+
+/* ═══════════════════════════════════════════════════════
+   RECAP MENSUEL
+   ═══════════════════════════════════════════════════════ */
+function openMonthlyRecap(){ renderMonthlyRecap(); openModal('monthlyRecapBackdrop'); }
+function closeMonthlyRecap(){ document.getElementById('monthlyRecapBackdrop').hidden=true; }
+
+function renderMonthlyRecap(){
+  const y=currentYear||new Date().getFullYear(), m=currentMonth!=null?currentMonth:new Date().getMonth();
+  const mISO=toISO(y,m,1);
+  const days=daysInMonth(y,m);
+  const mEnd=addDaysISO(mISO,days);
+  document.getElementById('monthlyRecapTitle').textContent='Synthèse — '+fmtMonthLabel(y,m);
+  let totalN=0, totalR=0, totalC=0, totalA=0, totalS=0;
+  const byApt={};
+  apartments.forEach(apt=>byApt[apt.id]={name:apt.name,nights:0,revenue:0,commission:0,services:0});
+  bookings.forEach(b=>{
+    if(['annulation','nemeconcerne'].includes(b.status)||!byApt[b.apartmentId]) return;
+    if(b.checkin<mEnd&&b.checkout>mISO){
+      const cs=b.checkin<mISO?mISO:b.checkin, ce=b.checkout>mEnd?mEnd:b.checkout;
+      const n=Math.max(0,Math.round((utcVal(ce)-utcVal(cs))/86400000));
+      byApt[b.apartmentId].nights+=n; totalN+=n;
+      if(['arrhes','paye'].includes(b.status)){
+        const tot=nightsBetween(b.checkin,b.checkout)||1;
+        const pro=(b.total||0)*n/tot, coPro=getCommissionAmount(b)*n/tot;
+        byApt[b.apartmentId].revenue+=pro; totalR+=pro;
+        byApt[b.apartmentId].commission+=coPro; totalC+=coPro;
+      }
+    }
+    if(b.checkin>=mISO&&b.checkin<mEnd){
+      totalA++;
+      const s=getServicesTotal(b); byApt[b.apartmentId].services+=s; totalS+=s;
+    }
+  });
+  apartments.forEach(apt=>{ const g=getGlobalServicesTotal(apt,mISO,mEnd); byApt[apt.id].services+=g; totalS+=g; });
+  const occRate=apartments.length*days>0?Math.round(totalN/(apartments.length*days)*100):0;
+  const rows=Object.values(byApt).filter(a=>a.nights>0||a.commission>0);
+  document.getElementById('monthlyRecapContent').innerHTML=`
+    <div class="stats-grid">
+      <div class="card"><div class="label">Nuitées</div><div class="value">${maskNum(totalN)}</div></div>
+      <div class="card"><div class="label">Taux d'occupation</div><div class="value">${privacyMode?'•••':occRate+'%'}</div></div>
+      <div class="card"><div class="label">Revenu confirmé</div><div class="value">${maskEuro(Math.round(totalR))}</div></div>
+      <div class="card"><div class="label">Arrivées</div><div class="value">${maskNum(totalA)}</div></div>
+    </div>
+    <div class="card" style="border-color:var(--accent);background:var(--accent-soft);margin-bottom:12px;">
+      <div class="label">&#128176; Total gagné ce mois</div>
+      <div class="value" style="color:var(--accent-dark);font-size:24px;">${maskEuro(Math.round((totalC+totalS)*100)/100)}</div>
+    </div>
+    <table style="width:100%;font-size:12.5px;">
+      <thead><tr><th style="text-align:left;padding:4px 6px;">Logement</th><th style="text-align:right;padding:4px 6px;">Nuits</th><th style="text-align:right;padding:4px 6px;">Revenu</th><th style="text-align:right;padding:4px 6px;">Commission</th><th style="text-align:right;padding:4px 6px;">Services</th></tr></thead>
+      <tbody>${rows.length===0?'<tr><td colspan="5" style="padding:10px 6px;color:var(--ink-faint);">Aucune donnée ce mois.</td></tr>':rows.map(a=>`<tr><td style="padding:4px 6px;">${escapeHtml(a.name)}</td><td class="mono" style="text-align:right;padding:4px 6px;">${maskNum(a.nights)}</td><td class="mono" style="text-align:right;padding:4px 6px;">${maskEuro(Math.round(a.revenue))}</td><td class="mono" style="text-align:right;padding:4px 6px;">${maskEuro(Math.round(a.commission*100)/100)}</td><td class="mono" style="text-align:right;padding:4px 6px;">${maskEuro(Math.round(a.services*100)/100)}</td></tr>`).join('')}</tbody>
+    </table>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   AVANCES RECAP
+   ═══════════════════════════════════════════════════════ */
+function openAdvancesRecap(){ renderAdvancesRecap(); openModal('advancesRecapBackdrop'); }
+function closeAdvancesRecap(){ document.getElementById('advancesRecapBackdrop').hidden=true; }
+function renderAdvancesRecap(){
+  const content=document.getElementById('advancesRecapContent');
+  const pending=[];
+  apartments.forEach(apt=>(apt.advances||[]).filter(a=>!a.reimbursed).forEach(a=>pending.push({...a,aptName:apt.name})));
+  const total=pending.reduce((s,a)=>s+(a.amount||0),0);
+  if(!pending.length){ content.innerHTML='<p style="color:var(--ink-faint);">Aucune avance en attente.</p>'; return; }
+  content.innerHTML=`<p style="font-size:13px;font-weight:700;color:var(--accent-dark);margin-bottom:12px;">Total à rembourser : ${maskEuro(total)}</p>`+
+    pending.map(a=>`<div class="advance-row"><div class="adv-info"><div style="font-weight:600;">${escapeHtml(a.description||'')}</div><div style="font-size:11px;color:var(--ink-faint);">${escapeHtml(a.aptName)} &mdash; ${fmtDateShort(a.date)}</div></div><span class="adv-amount">${maskEuro(a.amount)}</span></div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   SYNCHRO GOOGLE SHEETS (legacy)
+   ═══════════════════════════════════════════════════════ */
+function openSyncModal(){
+  const syncUrl=localStorage.getItem(LS_PREFIX+'syncUrl')||'';
+  document.getElementById('syncUrlInput').value=syncUrl;
+  document.getElementById('syncFormError').style.display='none';
+  document.getElementById('syncStatusLine').textContent=syncUrl?'Synchronisation active.':'Aucune synchronisation active.';
+  document.getElementById('flightApiKeyInput').value=getFlightApiKey();
+  document.getElementById('flightApiKeyStatus').textContent='';
+  openModal('syncBackdrop');
+}
+function closeSyncModal(){ document.getElementById('syncBackdrop').hidden=true; }
+
+/* ═══════════════════════════════════════════════════════
+   SAUVEGARDE / RESTAURATION
+   ═══════════════════════════════════════════════════════ */
+function openBackupModal(){ openModal('backupBackdrop'); }
+function closeBackupModal(){ document.getElementById('backupBackdrop').hidden=true; }
+
+function exportBackup(){
+  const data={apartments,bookings,profile:getMyProfile(),exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='conciergerie-backup-'+todayISO()+'.json';
+  a.click();
+}
+
+function restoreBackup(){
+  const file=document.getElementById('restoreFileInput').files[0];
+  if(!file){ alert('Selectionne un fichier.'); return; }
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.apartments||!data.bookings) throw new Error('Format invalide');
+      apartments=data.apartments; bookings=data.bookings;
+      if(data.profile) saveMyProfile(data.profile);
+      await Promise.all([saveApartments(),saveBookings()]);
+      closeBackupModal(); renderAll(); renderLegend();
+      alert('Restauration réussie !');
+    }catch(err){ alert('Fichier invalide : '+err.message); }
+  };
+  reader.readAsText(file);
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROFIL
+   ═══════════════════════════════════════════════════════ */
+function openMyProfileModal(){
+  const p=getMyProfile();
+  ['profileName','profileAddress','profilePhone','profileEmail','profileSiret','profileApe','profileTva','profileRcs','profileIban','profileLegal'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value=p[id.replace('profile','').charAt(0).toLowerCase()+id.replace('profile','').slice(1)]||'';
+  });
+  document.getElementById('profileName').value=p.name||'';
+  document.getElementById('profileLegalForm').value=p.legalForm||'';
+  document.getElementById('profileAddress').value=p.address||'';
+  document.getElementById('profilePhone').value=p.phone||'';
+  document.getElementById('profileEmail').value=p.email||'';
+  document.getElementById('profileSiret').value=p.siret||'';
+  document.getElementById('profileApe').value=p.ape||'';
+  document.getElementById('profileTva').value=p.tva||'';
+  document.getElementById('profileRcs').value=p.rcs||'';
+  document.getElementById('profilePaymentDelay').value=p.paymentDelay||'A reception';
+  document.getElementById('profilePaymentMethod').value=p.paymentMethod||'Virement bancaire';
+  document.getElementById('profileIban').value=p.iban||'';
+  document.getElementById('profileTvaStatus').value=p.tvaStatus||'non';
+  document.getElementById('profileTvaRateField').style.display=(p.tvaStatus==='oui')?'':'none';
+  document.getElementById('profileTvaRate').value=p.tvaRate||'';
+  document.getElementById('profileLegal').value=p.legal||'';
+  document.getElementById('profileSavedMsg').style.display='none';
+  openModal('myProfileBackdrop');
+}
+function closeMyProfileModal(){ document.getElementById('myProfileBackdrop').hidden=true; }
+
+/* ═══════════════════════════════════════════════════════
+   IMPRESSION / FACTURES
+   ═══════════════════════════════════════════════════════ */
+function openPrintDocument(bodyHtml){
+  const panel=document.getElementById('printPanel');
+  panel.innerHTML=`<div class="doc-print-btn-wrap"><button class="btn" id="closePrintDocBtn">&larr; Retour</button><button class="btn primary" id="doPrintBtn">&#128424;&#65039; Imprimer / PDF</button></div>${bodyHtml}`;
+  document.body.classList.add('printing-doc');
+  document.getElementById('closePrintDocBtn').addEventListener('click',()=>{document.body.classList.remove('printing-doc');panel.innerHTML='';});
+  document.getElementById('doPrintBtn').addEventListener('click',()=>window.print());
+  window.scrollTo(0,0);
+}
+
+function buildLegalMentions(p){
+  const tvaLine=p.tvaStatus==='oui'?`TVA ${p.tvaRate||20}% applicable.`:`TVA non applicable &mdash; art. 293 B du CGI.`;
+  const delay=p.paymentDelay||'A reception';
+  const method=p.paymentMethod||'Virement bancaire';
+  const ibanLine=(p.iban&&p.paymentMethod==='Virement bancaire')?`IBAN : ${escapeHtml(p.iban)}.`:'';
+  return `${tvaLine}<br>R&egrave;glement ${escapeHtml(delay)} de facture &mdash; Mode : ${escapeHtml(method)}. ${ibanLine}<br>En cas de retard de paiement, p&eacute;nalit&eacute;s au taux de 3 fois le taux d&rsquo;int&eacute;r&ecirc;t l&eacute;gal en vigueur, plus une indemnit&eacute; forfaitaire de recouvrement de 40&nbsp;&euro; (art. L.441-10 et L.441-11 du Code de Commerce).<br>Pas d&rsquo;escompte pour paiement anticip&eacute;.${p.legal?'<br>'+escapeHtml(p.legal):''}`;
+}
+
+function buildInvoiceHtml(b, apt){
+  const p=getMyProfile();
+  const n=nightsBetween(b.checkin,b.checkout);
+  const invoiceNum='FACT-'+b.checkin.replace(/-/g,'')+'-'+(b.id?b.id.slice(0,6).toUpperCase():'');
+  const tvaStatus=p.tvaStatus||'non';
+  const tvaRate=parseFloat(p.tvaRate)||20;
+  const total=b.total||0;
+  const totalHT=tvaStatus==='oui'?Math.round(total/(1+tvaRate/100)*100)/100:total;
+  const totalTVA=tvaStatus==='oui'?Math.round((total-totalHT)*100)/100:0;
+  return `<div class="doc-header"><h1>Attestation de location</h1><div class="doc-meta">N&deg; ${escapeHtml(invoiceNum)}<br>Date&nbsp;: ${fmtDateShort(todayISO())}</div></div>
+  <div class="doc-parties">
+    <div class="doc-party"><h3>Prestataire</h3><strong>${escapeHtml(p.name||'—')}</strong><span>${p.legalForm?escapeHtml(p.legalForm)+'<br>':''}${p.address?escapeHtml(p.address).replace(/\n/g,'<br>')+'<br>':''}${p.siret?'SIRET : '+escapeHtml(p.siret)+'<br>':''}${p.phone?escapeHtml(p.phone)+'<br>':''}${p.email?escapeHtml(p.email):''}
+    </span></div>
+    <div class="doc-party"><h3>Loueur (Propri&eacute;taire)</h3><strong>${escapeHtml(apt.owner||'—')}</strong><span>${apt.ownerPhone?escapeHtml(apt.ownerPhone)+'<br>':''}${apt.ownerEmail?escapeHtml(apt.ownerEmail)+'<br>':''}${apt.ownerAddress?escapeHtml(apt.ownerAddress).replace(/\n/g,'<br>'):''}</span></div>
+    <div class="doc-party"><h3>Locataire</h3><strong>${escapeHtml(b.client||'—')}</strong><span>${b.phone?escapeHtml(b.phone)+'<br>':''}${b.tenantAddress?escapeHtml(b.tenantAddress).replace(/\n/g,'<br>'):''}</span></div>
+  </div>
+  <div class="doc-party" style="margin-bottom:18px;"><h3>Logement</h3><strong>${escapeHtml(apt.name)}${apt.propertyType?' — '+escapeHtml(apt.propertyType):''}</strong><span>${apt.propertyAddress?escapeHtml(apt.propertyAddress):''}</span></div>
+  <table class="doc-table"><thead><tr><th>D&eacute;signation</th><th class="right">D&eacute;tail</th></tr></thead>
+  <tbody>
+    <tr><td>S&eacute;jour du ${fmtDateShort(b.checkin)} au ${fmtDateShort(b.checkout)}${b.checkinTime?' — arrivée '+b.checkinTime:''}${b.checkoutTime?' — départ '+b.checkoutTime:''}</td><td class="right">${n} nuit${n>1?'s':''}</td></tr>
+    <tr><td>Voyageurs : ${b.adults||0} adulte${(b.adults||0)>1?'s':''}${b.children?', '+b.children+' enfant'+(b.children>1?'s':''):''}${b.babies?', '+b.babies+' bébé'+(b.babies>1?'s':''):''}</td><td class="right">&mdash;</td></tr>
+    ${tvaStatus==='oui'?`<tr><td>Montant HT</td><td class="right">${fmtEuro(totalHT)}</td></tr><tr><td>TVA ${tvaRate}%</td><td class="right">${fmtEuro(totalTVA)}</td></tr>`:''}
+  </tbody>
+  <tfoot><tr><td><strong>Total ${tvaStatus==='oui'?'TTC':'du séjour'}</strong></td><td class="right"><strong>${fmtEuro(total)}</strong></td></tr></tfoot>
+  </table>
+  <div class="doc-footer">${buildLegalMentions(p)}</div>`;
+}
+
+function buildOwnerMonthlyInvoiceHtml(apt, year, month){
+  const p=getMyProfile();
+  const mISO=toISO(year,month,1);
+  const mDays=daysInMonth(year,month);
+  const mEnd=addDaysISO(mISO,mDays);
+  const monthLabel=MONTH_NAMES[month].charAt(0).toUpperCase()+MONTH_NAMES[month].slice(1);
+  const invoiceNum='FACT-'+year+'-'+(month+1<10?'0'+(month+1):month+1)+'-'+apt.id.slice(0,5).toUpperCase();
+  const mBk=bookings.filter(b=>b.apartmentId===apt.id&&['arrhes','paye'].includes(b.status)&&b.checkin>=mISO&&b.checkin<mEnd);
+  const bookingRows=mBk.map(b=>{
+    const n=nightsBetween(b.checkin,b.checkout);
+    const comm=getCommissionAmount(b);
+    let rows=`<tr><td>${fmtDateShort(b.checkin)}&rarr;${fmtDateShort(b.checkout)}</td><td>Location ${escapeHtml(b.client||'?')} &mdash; ${n} nuit${n>1?'s':''}</td><td class="right">${fmtEuro(b.total||0)}</td></tr>`;
+    if(comm) rows+=`<tr style="color:#666;font-size:11px;"><td></td><td>&rarr; Commission (${b.commissionPercent||20}%)</td><td class="right">${fmtEuro(comm)}</td></tr>`;
+    (b.services||[]).filter(s=>s.price>0).forEach(s=>{ rows+=`<tr><td>${fmtDateShort(b.checkin)}</td><td>Service : ${escapeHtml(s.label||'')}</td><td class="right">${fmtEuro(s.price)}</td></tr>`; });
+    return rows;
+  }).join('');
+  const globalSvcs=(apt.globalServices||[]).filter(s=>s.date>=mISO&&s.date<mEnd&&s.price>0);
+  const globalRows=globalSvcs.map(s=>`<tr><td>${fmtDateShort(s.date)}</td><td>Service général : ${escapeHtml(s.label||'')}</td><td class="right">${fmtEuro(s.price)}</td></tr>`).join('');
+  const advances=(apt.advances||[]).filter(a=>a.date>=mISO&&a.date<mEnd);
+  const advanceRows=advances.map(a=>`<tr><td>${fmtDateShort(a.date)}</td><td>Avance : ${escapeHtml(a.description||'')} ${a.reimbursed?'(remboursée)':'(en attente)'}</td><td class="right">${fmtEuro(a.amount||0)}</td></tr>`).join('');
+  const totalRevenue=mBk.reduce((s,b)=>s+(b.total||0),0);
+  const totalComm=mBk.reduce((s,b)=>s+getCommissionAmount(b),0);
+  const totalSvcs=mBk.reduce((s,b)=>s+getServicesTotal(b),0)+globalSvcs.reduce((s,sv)=>s+(sv.price||0),0);
+  const totalAdv=advances.reduce((s,a)=>s+(a.amount||0),0);
+  const totalDue=totalComm+totalSvcs+totalAdv;
+  return `<div class="doc-header"><h1>Facture de conciergerie &mdash; ${monthLabel} ${year}</h1><div class="doc-meta">N&deg; ${escapeHtml(invoiceNum)}<br>${fmtDateShort(todayISO())}</div></div>
+  <div class="doc-parties">
+    <div class="doc-party"><h3>Prestataire</h3><strong>${escapeHtml(p.name||'—')}</strong><span>${p.address?escapeHtml(p.address).replace(/\n/g,'<br>')+'<br>':''}${p.siret?'SIRET : '+escapeHtml(p.siret):''}${p.email?'<br>'+escapeHtml(p.email):''}</span></div>
+    <div class="doc-party"><h3>Propri&eacute;taire</h3><strong>${escapeHtml(apt.owner||'—')}</strong><span>${apt.ownerPhone?escapeHtml(apt.ownerPhone)+'<br>':''}${apt.ownerEmail?escapeHtml(apt.ownerEmail)+'<br>':''}${apt.ownerAddress?escapeHtml(apt.ownerAddress).replace(/\n/g,'<br>'):''}</span></div>
+  </div>
+  <table class="doc-table"><thead><tr><th>Date</th><th>Description</th><th class="right">Montant</th></tr></thead>
+  <tbody>${bookingRows||''}${globalRows||''}${advanceRows||''}${!bookingRows&&!globalRows&&!advanceRows?'<tr><td colspan="3" style="color:#999;font-style:italic;">Aucune opération ce mois.</td></tr>':''}</tbody>
+  <tfoot>
+    <tr><td colspan="2">Revenu locatif brut</td><td class="right">${fmtEuro(totalRevenue)}</td></tr>
+    <tr><td colspan="2">Commission</td><td class="right">${fmtEuro(totalComm)}</td></tr>
+    <tr><td colspan="2">Services facturés</td><td class="right">${fmtEuro(totalSvcs)}</td></tr>
+    <tr><td colspan="2">Avances</td><td class="right">${fmtEuro(totalAdv)}</td></tr>
+    <tr><td colspan="2"><strong>Total dû</strong></td><td class="right"><strong>${fmtEuro(totalDue)}</strong></td></tr>
+  </tfoot></table>
+  <div class="doc-footer">${buildLegalMentions(p)}</div>`;
+}
+
+function buildOwnerTaxRecapHtml(apt, year){
+  const p=getMyProfile();
+  const yearISO=toISO(year,0,1);
+  const yearEnd=toISO(year+1,0,1);
+  const monthly=[];
+  let totalNights=0, totalRevenue=0, totalFees=0;
+  for(let m=0;m<12;m++){
+    const mISO=toISO(year,m,1);
+    const mEnd=addDaysISO(mISO,daysInMonth(year,m));
+    const mBk=bookings.filter(b=>b.apartmentId===apt.id&&['arrhes','paye'].includes(b.status)&&b.checkin>=mISO&&b.checkin<mEnd);
+    const nights=mBk.reduce((s,b)=>s+nightsBetween(b.checkin,b.checkout),0);
+    const rev=mBk.reduce((s,b)=>s+(b.total||0),0);
+    const fees=mBk.reduce((s,b)=>s+getCommissionAmount(b),0)+getGlobalServicesTotal(apt,mISO,mEnd);
+    totalNights+=nights; totalRevenue+=rev; totalFees+=fees;
+    monthly.push({m,nights,revenue:rev,fees});
+  }
+  return `<div class="doc-header"><h1>Récapitulatif locatif ${year}</h1><div class="doc-meta">Edité le ${fmtDateShort(todayISO())}</div></div>
+  <div class="doc-party" style="margin-bottom:20px;"><h3>Logement</h3><strong>${escapeHtml(apt.name)}</strong><span>${escapeHtml(apt.owner||'—')}</span></div>
+  <table class="doc-table"><thead><tr><th>Mois</th><th class="right">Nuits</th><th class="right">Revenu brut</th><th class="right">Frais conciergerie</th><th class="right">Net perçu</th></tr></thead>
+  <tbody>${monthly.map(mo=>`<tr><td>${MONTH_NAMES[mo.m].charAt(0).toUpperCase()+MONTH_NAMES[mo.m].slice(1)}</td><td class="right mono">${mo.nights}</td><td class="right mono">${fmtEuro(Math.round(mo.revenue))}</td><td class="right mono">${fmtEuro(Math.round(mo.fees*100)/100)}</td><td class="right mono">${fmtEuro(Math.round((mo.revenue-mo.fees)*100)/100)}</td></tr>`).join('')}</tbody>
+  <tfoot><tr><td>Total ${year}</td><td class="right">${totalNights}</td><td class="right">${fmtEuro(Math.round(totalRevenue))}</td><td class="right">${fmtEuro(Math.round(totalFees*100)/100)}</td><td class="right">${fmtEuro(Math.round((totalRevenue-totalFees)*100)/100)}</td></tr></tfoot>
+  </table>
+  <div class="doc-footer">Le revenu locatif brut correspond aux montants perçus des locataires. Consulter un professionnel pour votre déclaration fiscale.</div>`;
+}
+
+function buildSelfFiscalRecapHtml(year){
+  const p=getMyProfile();
+  const yearISO=toISO(year,0,1), yearEnd=toISO(year+1,0,1);
+  const byApt={};
+  apartments.forEach(apt=>byApt[apt.id]={name:apt.name,commission:0,services:0});
+  let totalComm=0, totalSvcs=0, totalCount=0;
+  bookings.forEach(b=>{
+    if(!byApt[b.apartmentId]||!['arrhes','paye'].includes(b.status)||b.checkin<yearISO||b.checkin>=yearEnd) return;
+    byApt[b.apartmentId].commission+=getCommissionAmount(b);
+    byApt[b.apartmentId].services+=getServicesTotal(b);
+    totalCount++;
+  });
+  apartments.forEach(apt=>{ if(!byApt[apt.id]) return; const g=getGlobalServicesTotal(apt,yearISO,yearEnd); byApt[apt.id].services+=g; totalComm+=byApt[apt.id].commission; totalSvcs+=byApt[apt.id].services; });
+  const rows=Object.values(byApt).filter(a=>a.commission>0||a.services>0);
+  return `<div class="doc-header"><h1>Récapitulatif de revenus ${year}</h1><div class="doc-meta">Edité le ${fmtDateShort(todayISO())}</div></div>
+  <div class="doc-party" style="margin-bottom:20px;"><h3>Prestataire</h3><strong>${escapeHtml(p.name||'—')}</strong><span>${p.siret?'SIRET : '+escapeHtml(p.siret):''}${p.ape?'<br>APE : '+escapeHtml(p.ape):''}</span></div>
+  <table class="doc-table"><thead><tr><th>Logement</th><th class="right">Commission</th><th class="right">Services</th><th class="right">Total</th></tr></thead>
+  <tbody>${rows.length===0?'<tr><td colspan="4" style="font-style:italic;color:#999;">Aucune donnée.</td></tr>':rows.map(a=>`<tr><td>${escapeHtml(a.name)}</td><td class="right mono">${fmtEuro(Math.round(a.commission*100)/100)}</td><td class="right mono">${fmtEuro(Math.round(a.services*100)/100)}</td><td class="right mono">${fmtEuro(Math.round((a.commission+a.services)*100)/100)}</td></tr>`).join('')}</tbody>
+  <tfoot><tr><td>Total ${year} (${totalCount} résa)</td><td class="right">${fmtEuro(Math.round(totalComm*100)/100)}</td><td class="right">${fmtEuro(Math.round(totalSvcs*100)/100)}</td><td class="right">${fmtEuro(Math.round((totalComm+totalSvcs)*100)/100)}</td></tr></tfoot>
+  </table>
+  <div class="doc-footer">Revenus au titre de l'activité de conciergerie sur l'année ${year}. ${buildLegalMentions(p)}</div>`;
+}
+
+function buildAdvanceInvoiceHtml(adv, apt){
+  const p=getMyProfile();
+  const invoiceNum='AVA-'+(adv.date||todayISO()).replace(/-/g,'')+'-'+adv.id.slice(0,5).toUpperCase();
+  return `<div class="doc-header"><h1>Facture de prestation</h1><div class="doc-meta">N&deg; ${escapeHtml(invoiceNum)}<br>${fmtDateShort(todayISO())}</div></div>
+  <div class="doc-meta-bar"><div>Logement : <span>${escapeHtml(apt.name)}</span></div><div>Date : <span>${fmtDateShort(adv.date)}</span></div><div>Statut : <span>${adv.reimbursed?'✅ Remboursée le '+fmtDateShort(adv.reimbursedDate):'⏳ En attente'}</span></div></div>
+  <div class="doc-parties">
+    <div class="doc-party"><h3>Prestataire</h3><strong>${escapeHtml(p.name||'Conciergerie')}</strong><span>${p.address?escapeHtml(p.address).replace(/\n/g,'<br>')+'<br>':''}${p.siret?'SIRET : '+escapeHtml(p.siret):''}${p.email?'<br>'+escapeHtml(p.email):''}</span></div>
+    <div class="doc-party"><h3>Propri&eacute;taire</h3><strong>${escapeHtml(apt.owner||'—')}</strong><span>${apt.ownerPhone?escapeHtml(apt.ownerPhone)+'<br>':''}${apt.ownerEmail?escapeHtml(apt.ownerEmail)+'<br>':''}${apt.ownerAddress?escapeHtml(apt.ownerAddress).replace(/\n/g,'<br>'):''}</span></div>
+  </div>
+  <table class="doc-table"><thead><tr><th>Date</th><th>Service rendu</th><th class="right">Montant</th></tr></thead>
+  <tbody><tr><td>${fmtDateShort(adv.date)}</td><td>${escapeHtml(adv.description||'Prestation')}</td><td class="right">${fmtEuro(adv.amount||0)}</td></tr></tbody>
+  <tfoot><tr><td colspan="2"><strong>Total &agrave; rembourser</strong></td><td class="right"><strong>${fmtEuro(adv.amount||0)}</strong></td></tr></tfoot>
+  </table>
+  <div class="doc-footer">${buildLegalMentions(p)}</div>`;
+}
+
+function printTenantInvoice(bookingId){
+  const b=bookings.find(x=>x.id===bookingId);
+  const apt=b?apartments.find(a=>a.id===b.apartmentId):null;
+  if(b&&apt) openPrintDocument(buildInvoiceHtml(b,apt));
+}
+function printAdvanceInvoice(aptId, advId){
+  const apt=apartments.find(a=>a.id===aptId);
+  if(!apt) return;
+  const adv=(apt.advances||[]).find(a=>a.id===advId);
+  if(adv) openPrintDocument(buildAdvanceInvoiceHtml(adv,apt));
+}
+
+/* ═══════════════════════════════════════════════════════
+   AUTHENTIFICATION SUPABASE
+   ═══════════════════════════════════════════════════════ */
+function showLoginMsg(msg, isError){
+  if(isError===undefined) isError=true;
+  const el=document.getElementById('loginMsg');
+  if(!el) return;
+  el.textContent=msg;
+  el.style.display='block';
+  el.style.background=isError?'#fdecea':'#e8f5e9';
+  el.style.color=isError?'#c0392b':'#2e7d32';
+}
+
+function showTab(tab){
+  const els={login:document.getElementById('formLogin'),register:document.getElementById('formRegister'),forgot:document.getElementById('formForgot')};
+  Object.entries(els).forEach(([k,el])=>{ if(el) el.style.display=k===tab?'':'none'; });
+  const tabs=document.getElementById('loginTabs');
+  if(tabs) tabs.style.display=tab==='forgot'?'none':'flex';
+  const sub=document.getElementById('loginSubtitle');
+  if(sub) sub.textContent=tab==='forgot'?'Réinitialisation du mot de passe':'Connexion à votre espace';
+  const msg=document.getElementById('loginMsg');
+  if(msg) msg.style.display='none';
+  const tL=document.getElementById('tabLoginBtn'), tR=document.getElementById('tabRegisterBtn');
+  if(tL){ tL.style.background=tab==='login'?'#1F4F45':'transparent'; tL.style.color=tab==='login'?'#fff':'#1F4F45'; }
+  if(tR){ tR.style.background=tab==='register'?'#1F4F45':'transparent'; tR.style.color=tab==='register'?'#fff':'#1F4F45'; }
+}
+
+async function sbAuthCall(endpoint, body){
+  try{
+    const res=await fetch(SUPABASE_URL+'/auth/v1/'+endpoint,{
+      method:'POST', headers:{'apikey':SUPABASE_ANON,'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+    return {ok:res.ok,status:res.status,data:await res.json()};
+  }catch(e){ return {ok:false,status:0,data:{msg:'Erreur réseau.'}}; }
+}
+
+async function doLogin(){
+  const email=(document.getElementById('loginEmail')?.value||'').trim();
+  const pwd=document.getElementById('loginPassword')?.value||'';
+  if(!email||!pwd){ showLoginMsg('Remplis tous les champs.'); return; }
+  if(!sbConfigured()){ showLoginMsg('Supabase non configuré — utilise le mode local.'); return; }
+  showLoginMsg('Connexion en cours…',false);
+  const {ok,data}=await sbAuthCall('token?grant_type=password',{email,password:pwd});
+  if(ok&&data.access_token){
+    _supabaseSession=data;
+    try{localStorage.setItem(LS_PREFIX+'session',JSON.stringify(data));}catch(e){}
+    enterApp();
+  } else {
+    const msg=(data&&(data.error_description||data.msg||data.error))||'';
+    showLoginMsg(msg.toLowerCase().includes('invalid')||msg.toLowerCase().includes('credentials')?'Email ou mot de passe incorrect.':(msg||'Email ou mot de passe incorrect.'));
+  }
+}
+
+async function doRegister(){
+  const email=(document.getElementById('registerEmail')?.value||'').trim();
+  const pwd=document.getElementById('registerPassword')?.value||'';
+  const pwd2=document.getElementById('registerPassword2')?.value||'';
+  const code=(document.getElementById('registerInviteCode')?.value||'').trim().toUpperCase();
+  if(!email||!pwd||!code){showLoginMsg('Remplis tous les champs.');return;}
+  if(code!==INVITE_CODE.toUpperCase()){
+    showLoginMsg("Code d'invitation incorrect.");
+    const inv=document.getElementById('registerInviteCode');
+    if(inv){inv.value='';inv.focus();}
+    return;
+  }
+  if(pwd.length<8){showLoginMsg('Le mot de passe doit faire au moins 8 caractères.');return;}
+  if(pwd!==pwd2){showLoginMsg('Les mots de passe ne correspondent pas.');return;}
+  if(!sbConfigured()){showLoginMsg('Supabase non configuré.');return;}
+  showLoginMsg('Création du compte…',false);
+  const {ok,data}=await sbAuthCall('signup',{email,password:pwd});
+  if(ok&&data&&(data.access_token||data.id||(data.user&&data.user.id))){
+    if(data.access_token){_supabaseSession=data;try{localStorage.setItem(LS_PREFIX+'session',JSON.stringify(data));}catch(e){} enterApp();}
+    else{showLoginMsg('Compte créé ! Vérifie ton email pour confirmer.',false);showTab('login');}
+  } else {
+    const msg=(data&&(data.msg||data.error_description||data.error))||'';
+    showLoginMsg(msg.toLowerCase().includes('already')?'Cet email est déjà utilisé.':(msg||'Erreur lors de la création.'));
+  }
+}
+
+async function doForgot(){
+  const email=(document.getElementById('forgotEmail')?.value||'').trim();
+  if(!email){showLoginMsg("Saisis ton email.");return;}
+  if(!sbConfigured()){showLoginMsg('Supabase non configuré.');return;}
+  showLoginMsg('Envoi en cours…',false);
+  try{
+    const res=await fetch(SUPABASE_URL+'/auth/v1/recover',{method:'POST',headers:{'apikey':SUPABASE_ANON,'Content-Type':'application/json'},body:JSON.stringify({email})});
+    showLoginMsg(res.ok?'Lien envoyé ! Vérifie ta boîte mail.':"Erreur — vérifie l'email saisi.",!res.ok);
+  }catch(e){showLoginMsg('Erreur réseau.');}
+}
+
+function enterLocalMode(){ _supabaseSession=null; enterApp(); }
+
+function enterApp(){
+  const ls=document.getElementById('loginScreen');
+  const app=document.getElementById('app');
+  if(ls) ls.style.display='none';
+  if(app) app.style.display='';
+  const email=(_supabaseSession&&_supabaseSession.user&&_supabaseSession.user.email)||'Mode local';
+  if(!document.getElementById('drawerUserInfo')){
+    const drawerHead=document.querySelector('.drawer-head');
+    if(drawerHead){
+      const div=document.createElement('div');
+      div.id='drawerUserInfo';
+      div.style.cssText='font-size:11.5px;color:var(--ink-faint);padding:2px 0 10px;display:flex;justify-content:space-between;align-items:center;';
+      div.innerHTML='<span>&#128100; '+escapeHtml(email)+'</span><button id="logoutBtn" style="font-size:11px;color:var(--st-annulation);background:none;border:none;cursor:pointer;padding:0;">Déconnexion</button>';
+      drawerHead.parentNode.insertBefore(div,drawerHead.nextSibling);
+      document.getElementById('logoutBtn')?.addEventListener('click',doLogout);
+    }
+  }
+  startAntiPausePing();
+  if(typeof init==='function') init();
+}
+
+async function doLogout(){
+  if(_supabaseSession&&_supabaseSession.access_token&&sbConfigured()){
+    try{await fetch(SUPABASE_URL+'/auth/v1/logout',{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+_supabaseSession.access_token}});}catch(e){}
+  }
+  _supabaseSession=null;
+  try{localStorage.removeItem(LS_PREFIX+'session');}catch(e){}
+  apartments=[];bookings=[];
+  location.reload();
+}
+
+/* Restaurer la session */
+(function(){
+  if(!sbConfigured()){
+    const lb=document.getElementById('localModeDiv');
+    if(lb) lb.style.display='block';
+    showLoginMsg('Supabase non configuré — mode local disponible.',false);
+    const m=document.getElementById('loginMsg');
+    if(m){m.style.background='#fff8e1';m.style.color='#9a7d00';}
+    const app=document.getElementById('app');
+    if(app) app.style.display='none';
+    return;
+  }
+  try{
+    const raw=localStorage.getItem(LS_PREFIX+'session');
+    if(raw){
+      const session=JSON.parse(raw);
+      if(session&&session.access_token&&session.expires_at&&session.expires_at*1000>Date.now()){
+        _supabaseSession=session;
+        const ls=document.getElementById('loginScreen');
+        const app=document.getElementById('app');
+        if(ls) ls.style.display='none';
+        if(app) app.style.display='';
+        startAntiPausePing();
+        if(typeof init==='function') init();
+        return;
+      }
+    }
+  }catch(e){}
+  const app=document.getElementById('app');
+  if(app) app.style.display='none';
+  document.getElementById('loginEmail')?.focus();
+})();
+
+/* Ecouteurs boutons connexion */
+(function(){
+  function on(id,ev,fn){ const el=document.getElementById(id); if(el) el.addEventListener(ev,fn); }
+  on('tabLoginBtn','click',()=>showTab('login'));
+  on('tabRegisterBtn','click',()=>showTab('register'));
+  on('doLoginBtn','click',doLogin);
+  on('forgotTabBtn','click',()=>showTab('forgot'));
+  on('doRegisterBtn','click',doRegister);
+  on('doForgotBtn','click',doForgot);
+  on('backToLoginBtn','click',()=>showTab('login'));
+  on('localModeBtn','click',enterLocalMode);
+  ['loginEmail','loginPassword'].forEach(id=>on(id,'keydown',e=>{if(e.key==='Enter')doLogin();}));
+  ['registerEmail','registerPassword','registerPassword2','registerInviteCode'].forEach(id=>on(id,'keydown',e=>{if(e.key==='Enter')doRegister();}));
+  on('forgotEmail','keydown',e=>{if(e.key==='Enter')doForgot();});
+})();
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════ */
+async function init(){
+  const now=new Date();
+  currentYear=now.getFullYear();
+  currentMonth=now.getMonth();
+  await loadDataFromLocal();
+  renderLegend();
+  renderAll();
+  bindEvents();
+  startAutoRefresh();
+  startFlightAutoUpdate();
+  if(privacyMode) document.querySelectorAll('.eye-toggle').forEach(btn=>{btn.textContent='&#128065;';btn.classList.add('active');});
+  // Charger depuis Supabase en arriere-plan
+  if(sbConfigured()&&_supabaseSession){
+    loadData().then(()=>renderAll()).catch(()=>{});
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   BIND EVENTS
+   ═══════════════════════════════════════════════════════ */
+function bindEvents(){
+  // Navigation calendrier
+  document.getElementById('prevMonth').addEventListener('click',()=>{
+    if(viewMode==='week'){ const s=mondayOf(toISO(currentYear,currentMonth,1)); const prev=addDaysISO(s,-7); const p=parseISO(prev); currentYear=p.y; currentMonth=p.m; }
+    else { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} }
+    renderCalendar();
+  });
+  document.getElementById('nextMonth').addEventListener('click',()=>{
+    if(viewMode==='week'){ const s=mondayOf(toISO(currentYear,currentMonth,1)); const next=addDaysISO(s,7); const p=parseISO(next); currentYear=p.y; currentMonth=p.m; }
+    else { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} }
+    renderCalendar();
+  });
+  document.getElementById('todayBtn').addEventListener('click',()=>{
+    const now=new Date(); currentYear=now.getFullYear(); currentMonth=now.getMonth();
+    renderCalendar();
+    setTimeout(()=>{ const h=document.querySelector('.day-head.today'); if(h) h.scrollIntoView({inline:'center',behavior:'smooth'}); },100);
+  });
+  document.getElementById('viewSelectBtn').addEventListener('click',()=>{
+    const menu=document.getElementById('viewSelectMenu');
+    menu.classList.toggle('open');
+  });
+  document.querySelectorAll('#viewSelectMenu [data-view]').forEach(btn=>btn.addEventListener('click',()=>{
+    viewMode=btn.getAttribute('data-view');
+    document.getElementById('viewSelectMenu').classList.remove('open');
+    renderCalendar();
+  }));
+  document.getElementById('toggleListBtn').addEventListener('click',()=>{
+    const panel=document.getElementById('bookingsListPanel');
+    panel.style.display=panel.style.display==='none'?'block':'none';
+    if(panel.style.display==='block') renderBookingsList();
+  });
+  document.addEventListener('click',e=>{ if(!e.target.closest('.view-select-wrap')) document.getElementById('viewSelectMenu').classList.remove('open'); });
+
+  // Tiroir
+  document.getElementById('menuBtn').addEventListener('click',openDrawer);
+  document.getElementById('closeDrawerXBtn').addEventListener('click',closeDrawer);
+  document.getElementById('drawerOverlay').addEventListener('click',closeDrawer);
+  document.getElementById('drawerEyeBtn').addEventListener('click',togglePrivacyMode);
+  document.getElementById('annualRecapBtn').addEventListener('click',()=>{closeDrawer();openAnnualRecap();});
+  document.getElementById('backupBtn').addEventListener('click',()=>{closeDrawer();openBackupModal();});
+  document.getElementById('syncBtn').addEventListener('click',()=>{closeDrawer();openSyncModal();});
+  document.getElementById('manageApartmentsBtn').addEventListener('click',()=>{closeDrawer();openApartmentsModal();});
+  document.getElementById('myProfileBtn').addEventListener('click',()=>{closeDrawer();openMyProfileModal();});
+  document.getElementById('printBtn').addEventListener('click',()=>{closeDrawer();window.print();});
+
+  // Réservation
+  document.getElementById('addBookingBtn').addEventListener('click',()=>{
+    if(!apartments.length){openApartmentsModal();return;}
+    openNewBookingBlank();
+  });
+  document.getElementById('emptyAddAptBtn')?.addEventListener('click',()=>{openApartmentsModal();});
+  document.getElementById('saveBookingBtn').addEventListener('click',saveBooking);
+  document.getElementById('cancelBookingBtn').addEventListener('click',closeBookingModal);
+  document.getElementById('closeModalXBtn').addEventListener('click',closeBookingModal);
+  document.getElementById('modalBackdrop').addEventListener('click',e=>{if(e.target.id==='modalBackdrop')closeBookingModal();});
+
+  // Champs réservation
+  attachDateMask(document.getElementById('bkCheckin'));
+  attachDateMask(document.getElementById('bkCheckout'));
+  document.getElementById('bkCheckin').addEventListener('input',updateNightsBadge);
+  document.getElementById('bkCheckout').addEventListener('input',updateNightsBadge);
+  document.getElementById('bkBabies').addEventListener('input',updateBabyReminder);
+  document.getElementById('bkPricePerNight').addEventListener('input',()=>{
+    const pn=parseFloat(document.getElementById('bkPricePerNight').value)||0;
+    const ci=frToISO(document.getElementById('bkCheckin').value);
+    const co=frToISO(document.getElementById('bkCheckout').value);
+    if(pn&&ci&&co){ document.getElementById('bkTotal').value=Math.round(pn*nightsBetween(ci,co)*100)/100; }
+  });
+  document.getElementById('bkTotal').addEventListener('input',()=>{
+    const total=parseFloat(document.getElementById('bkTotal').value)||0;
+    const pct=parseFloat(document.getElementById('bkCommission').value)||0;
+    // juste mise a jour visuelle si besoin
+  });
+  document.getElementById('bkTrackTimes').addEventListener('change',e=>{
+    document.getElementById('timesFields').style.display=e.target.checked?'flex':'none';
+  });
+  document.getElementById('bkTrackFlight').addEventListener('change',e=>{
+    document.getElementById('flightFields').style.display=e.target.checked?'flex':'none';
+    document.getElementById('flightStatus').style.display='none';
+    if(e.target.checked&&document.getElementById('bkFlightNumber').value.trim()) checkFlightStatus();
+  });
+  document.getElementById('bkFlightNumber').addEventListener('input',()=>{
+    clearTimeout(flightCheckDebounce);
+    const v=document.getElementById('bkFlightNumber').value.trim();
+    if(!v) return;
+    flightCheckDebounce=setTimeout(checkFlightStatus,900);
+  });
+  document.getElementById('bkFlightNumber').addEventListener('blur',()=>{
+    clearTimeout(flightCheckDebounce);
+    if(document.getElementById('bkFlightNumber').value.trim()) checkFlightStatus();
+  });
+  document.getElementById('bkTrackDeposit').addEventListener('change',e=>{
+    document.getElementById('depositFields').style.display=e.target.checked?'flex':'none';
+  });
+  document.getElementById('bkInvoice').addEventListener('change',e=>{
+    document.getElementById('invoiceFields').style.display=e.target.checked?'':'none';
+  });
+  document.getElementById('addServiceRowBtn').addEventListener('click',()=>{
+    currentServices.push({label:'',price:null});
+    renderServicesRows();
+  });
+  // Mini-calendriers réservation
+  document.querySelector('[data-target="bkCheckin"]').addEventListener('click',e=>{e.stopPropagation();toggleMiniCalendar('bkCheckin');});
+  document.querySelector('[data-target="bkCheckout"]').addEventListener('click',e=>{e.stopPropagation();toggleMiniCalendar('bkCheckout');});
+
+  // Détail
+  document.getElementById('closeDetailXBtn').addEventListener('click',closeDetailModal);
+  document.getElementById('detailBackdrop').addEventListener('click',e=>{if(e.target.id==='detailBackdrop')closeDetailModal();});
+  document.getElementById('detailEditBtn').addEventListener('click',()=>{closeDetailModal();if(detailBookingId)openEditBooking(detailBookingId);});
+
+  // Stats
+  document.getElementById('closeStatsXBtn').addEventListener('click',closeStatsModal);
+  document.getElementById('statsBackdrop').addEventListener('click',e=>{if(e.target.id==='statsBackdrop')closeStatsModal();});
+  document.getElementById('statsEyeBtn').addEventListener('click',togglePrivacyMode);
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    activeTab=btn.getAttribute('data-tab');
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b===btn));
+    renderApartmentStats();
+  }));
+
+  // Logements
+  document.getElementById('closeApartmentsXBtn').addEventListener('click',closeApartmentsModal);
+  document.getElementById('apartmentsBackdrop').addEventListener('click',e=>{if(e.target.id==='apartmentsBackdrop')closeApartmentsModal();});
+  document.getElementById('addApartmentBtn').addEventListener('click',addApartment);
+  attachPhoneMask(document.getElementById('newAptOwnerPhone'));
+
+  // Récap annuel
+  document.getElementById('closeAnnualXBtn').addEventListener('click',closeAnnualRecap);
+  document.getElementById('annualBackdrop').addEventListener('click',e=>{if(e.target.id==='annualBackdrop')closeAnnualRecap();});
+  document.getElementById('annualEyeBtn').addEventListener('click',togglePrivacyMode);
+  document.getElementById('annualPrevYear').addEventListener('click',()=>{annualYear--;renderAnnualRecap();});
+  document.getElementById('annualNextYear').addEventListener('click',()=>{annualYear++;renderAnnualRecap();});
+
+  // Récap mensuel
+  document.getElementById('closeMonthlyRecapXBtn').addEventListener('click',closeMonthlyRecap);
+  document.getElementById('monthlyRecapEyeBtn').addEventListener('click',togglePrivacyMode);
+  document.getElementById('monthlyRecapBackdrop').addEventListener('click',e=>{if(e.target.id==='monthlyRecapBackdrop')closeMonthlyRecap();});
+
+  // Avances recap
+  document.getElementById('closeAdvancesRecapXBtn').addEventListener('click',closeAdvancesRecap);
+  document.getElementById('advancesRecapBackdrop').addEventListener('click',e=>{if(e.target.id==='advancesRecapBackdrop')closeAdvancesRecap();});
+
+  // Synchro
+  document.getElementById('closeSyncXBtn').addEventListener('click',closeSyncModal);
+  document.getElementById('syncBackdrop').addEventListener('click',e=>{if(e.target.id==='syncBackdrop')closeSyncModal();});
+  document.getElementById('saveSyncBtn').addEventListener('click',()=>{
+    const url=document.getElementById('syncUrlInput').value.trim();
+    try{localStorage.setItem(LS_PREFIX+'syncUrl',url);}catch(e){}
+    closeSyncModal();
+  });
+  document.getElementById('disableSyncBtn').addEventListener('click',()=>{
+    try{localStorage.removeItem(LS_PREFIX+'syncUrl');}catch(e){}
+    closeSyncModal();
+  });
+  document.getElementById('testSyncBtn').addEventListener('click',async()=>{
+    const url=document.getElementById('syncUrlInput').value.trim();
+    if(!url){document.getElementById('syncFormError').textContent='Saisis une URL.';document.getElementById('syncFormError').style.display='block';return;}
+    document.getElementById('syncFormError').style.display='none';
+    try{const r=await fetch(url+'?action=test');document.getElementById('syncStatusLine').textContent=r.ok?'✅ Connexion réussie.':'❌ Erreur de connexion.';}
+    catch(e){document.getElementById('syncStatusLine').textContent='❌ Impossible de contacter le serveur.';}
+  });
+  document.getElementById('forceRefreshLink').addEventListener('click',()=>{loadData().then(()=>renderAll());});
+  document.getElementById('saveFlightApiKeyBtn').addEventListener('click',()=>{
+    const key=document.getElementById('flightApiKeyInput').value.trim();
+    saveFlightApiKey(key);
+    document.getElementById('flightApiKeyStatus').textContent=key?'✅ Clé enregistrée.':'Clé retirée.';
+    startFlightAutoUpdate();
+  });
+
+  // Sauvegarde
+  document.getElementById('closeBackupXBtn').addEventListener('click',closeBackupModal);
+  document.getElementById('backupBackdrop').addEventListener('click',e=>{if(e.target.id==='backupBackdrop')closeBackupModal();});
+  document.getElementById('exportBackupBtn').addEventListener('click',exportBackup);
+  document.getElementById('restoreBackupBtn').addEventListener('click',restoreBackup);
+
+  // Profil
+  document.getElementById('closeMyProfileXBtn').addEventListener('click',closeMyProfileModal);
+  document.getElementById('myProfileBackdrop').addEventListener('click',e=>{if(e.target.id==='myProfileBackdrop')closeMyProfileModal();});
+  document.getElementById('profileTvaStatus').addEventListener('change',e=>{
+    document.getElementById('profileTvaRateField').style.display=e.target.value==='oui'?'':'none';
+  });
+  attachPhoneMask(document.getElementById('profilePhone'));
+  document.getElementById('saveMyProfileBtn').addEventListener('click',()=>{
+    const p={
+      name:document.getElementById('profileName').value.trim(),
+      legalForm:document.getElementById('profileLegalForm').value,
+      address:document.getElementById('profileAddress').value.trim(),
+      phone:document.getElementById('profilePhone').value.trim(),
+      email:document.getElementById('profileEmail').value.trim(),
+      siret:document.getElementById('profileSiret').value.trim(),
+      ape:document.getElementById('profileApe').value.trim(),
+      tva:document.getElementById('profileTva').value.trim(),
+      rcs:document.getElementById('profileRcs').value.trim(),
+      paymentDelay:document.getElementById('profilePaymentDelay').value,
+      paymentMethod:document.getElementById('profilePaymentMethod').value,
+      iban:document.getElementById('profileIban').value.trim(),
+      tvaStatus:document.getElementById('profileTvaStatus').value,
+      tvaRate:document.getElementById('profileTvaRate').value.trim(),
+      legal:document.getElementById('profileLegal').value.trim(),
+    };
+    saveMyProfile(p);
+    const msg=document.getElementById('profileSavedMsg');
+    if(msg){msg.style.display='block';setTimeout(()=>msg.style.display='none',2000);}
+  });
+
+  // Confirm
+  document.getElementById('confirmYesBtn').addEventListener('click',()=>{
+    document.getElementById('confirmBackdrop').hidden=true;
+    if(confirmCallback){const cb=confirmCallback;confirmCallback=null;cb();}
+  });
+  document.getElementById('confirmNoBtn').addEventListener('click',()=>{ document.getElementById('confirmBackdrop').hidden=true; confirmCallback=null; });
+
+  // Swipe tactile
+  let touchStartX=0;
+  document.getElementById('calendarScroll').addEventListener('touchstart',e=>touchStartX=e.touches[0].clientX,{passive:true});
+  document.getElementById('calendarScroll').addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-touchStartX;
+    if(Math.abs(dx)>60){
+      if(dx<0){currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++;}}
+      else{currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--;}}
+      renderCalendar();
+    }
+  });
+
+  // Echap
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){
+      closeBookingModal();closeApartmentsModal();closeSyncModal();closeStatsModal();
+      closeAnnualRecap();closeAdvancesRecap();closeMonthlyRecap();closeMyProfileModal();
+      closeBackupModal();closeDrawer();closeDetailModal();closeAllMiniCalendars();
+      document.getElementById('confirmBackdrop').hidden=true;
+    }
+  });
+
+  // Fermer mini-calendriers au clic dehors
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('.date-input-wrap')&&!e.target.closest('.mini-calendar')) closeAllMiniCalendars();
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   PWA
+   ═══════════════════════════════════════════════════════ */
+(function setupPWA(){
+  try{
+    const iconSvg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="40" fill="#2F6F62"/><text x="96" y="130" font-size="110" text-anchor="middle" font-family="sans-serif">&#127968;</text></svg>';
+    const iconUrl='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(iconSvg)));
+    const appleIcon=document.getElementById('pwaIcon');
+    if(appleIcon) appleIcon.href=iconUrl;
+    const manifest={name:'Planning Conciergerie',short_name:'Conciergerie',start_url:'./',display:'standalone',background_color:'#EEF2EF',theme_color:'#2F6F62',icons:[{src:iconUrl,sizes:'192x192',type:'image/svg+xml',purpose:'any maskable'}]};
+    try{
+      const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
+      const mUrl=URL.createObjectURL(mBlob);
+      const mLink=document.getElementById('pwaManifest');
+      if(mLink) mLink.href=mUrl;
+    }catch(e){}
+    if('serviceWorker' in navigator){
+      try{
+        const swCode='const CACHE="conciergerie-v1";self.addEventListener("install",e=>{self.skipWaiting();});self.addEventListener("activate",e=>{e.waitUntil(clients.claim());});self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;e.respondWith(fetch(e.request).then(res=>{const r=res.clone();caches.open(CACHE).then(c=>c.put(e.request,r));return res;}).catch(()=>caches.match(e.request)));});';
+        const swBlob=new Blob([swCode],{type:'application/javascript'});
+        const swUrl=URL.createObjectURL(swBlob);
+        navigator.serviceWorker.register(swUrl,{scope:'./'}).catch(()=>{});
+      }catch(e){}
+    }
+  }catch(e){}
+})();
+</script>
+
+</body>
+</html>
